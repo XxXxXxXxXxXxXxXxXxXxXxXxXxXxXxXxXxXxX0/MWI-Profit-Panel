@@ -2,7 +2,9 @@ import globals from './globals.js';
 import { GenerateDom } from './domGenerator.js';
 import { createTooltip } from './tooltipManager.js';
 import { initSettingsPanel } from './settingsPanel.js';
-import { formatDuration, getMwiObj, getDuration, mooketStatus } from './utils.js';
+import { formatDuration, getMwiObj } from './utils.js';
+
+let initialized = false;
 
 // 获取当前交易模式的标识
 function getCurrentTradingMode() {
@@ -107,12 +109,14 @@ export async function waitForPannels() {
         container.dataset.processed = "true";
 
         setupTabSwitching(newTabButton, newPanel, tabPanelsContainer, container);
-        createTooltip();
-        setupClickActions();
 
-        initSettingsPanel();
-
-        setInterval(() => refreshProfitPanel(), 1000);
+        if (!initialized) {
+            createTooltip();
+            setupClickActions();
+            initSettingsPanel();
+            setInterval(() => refreshProfitPanel(), 1000);
+            initialized = true;
+        }
     });
 
     setTimeout(waitForPannels, 1000);

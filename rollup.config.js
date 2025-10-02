@@ -6,7 +6,7 @@ import fs from 'fs';
 let last = Date.now();
 const isDev = process.env.NODE_ENV === 'development';
 
-const version = "2025.08.19";
+const version = "2025.10.02";
 
 function updateBanner() {
     if (Date.now() - last > 1000) last = Date.now();
