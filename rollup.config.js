@@ -6,7 +6,7 @@ import fs from 'fs';
 let last = Date.now();
 const isDev = process.env.NODE_ENV === 'development';
 
-const version = "2025.10.16";
+const version = "2025.11.7";
 
 function updateBanner() {
     if (Date.now() - last > 1000) last = Date.now();
@@ -17,6 +17,9 @@ function updateBanner() {
 // @description  Development version of MWI Profit Panel
 // @author       MengLan
 // @match        https://www.milkywayidle.com/*
+// @match        https://test.milkywayidle.com/*
+// @match        https://www.milkywayidlecn.com/*
+// @match        https://test.milkywayidlecn.com/*
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
 // @grant        GM_xmlhttpRequest
@@ -44,6 +47,9 @@ const prodBanner = `// ==UserScript==
 // @description  milkywayidle游戏利润插件，在右面板添加了根据当前市场数据计算出来的收益详情，掉落记录展示了掉落详情
 // @author       MengLan
 // @match        https://www.milkywayidle.com/*
+// @match        https://test.milkywayidle.com/*
+// @match        https://www.milkywayidlecn.com/*
+// @match        https://test.milkywayidlecn.com/*
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
 // @grant        GM_xmlhttpRequest
