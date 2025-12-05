@@ -1,27 +1,10 @@
 import { formatNumber, getDuration, getMwiObj, TimeSpan, } from './utils.js';
 import globals from './globals.js';
 
-const freshnessConfig = {
-    cacheKey: "refreshnessMarketDataCache",
-    targetUrls: [
-        "https://ghproxy.net/https://raw.githubusercontent.com/holychikenz/MWIApi/main/milkyapi.json",
-        "https://raw.githubusercontent.com/holychikenz/MWIApi/main/milkyapi.json"
-    ],
-    dataRefreshInterval: TimeSpan.ONE_HOURS,
-};
-
-const medianConfig = {
-    cacheKey: "medianMarketDataCache",
-    targetUrls: [
-        "https://ghproxy.net/https://raw.githubusercontent.com/holychikenz/MWIApi/main/medianmarket.json",
-        "https://raw.githubusercontent.com/holychikenz/MWIApi/main/medianmarket.json"
-    ],
-    dataRefreshInterval: TimeSpan.ONE_HOURS,
-};
 
 const officialConfig = {
     cacheKey: "officialMarketDataCache",
-    targetUrls: ["https://www.milkywayidle.com/game_data/marketplace.json"],
+    targetUrls: ["https://www.milkywayidle.com/game_data/marketplace.json", "https://www.milkywayidlecn.com/game_data/marketplace.json"],
     dataTransfer: data => {
         data.market = data.marketData;
         delete data.marketData;
@@ -212,13 +195,74 @@ class MooketMarketRealtime {
 }
 
 const DataSourceKey = {
-    MwiApi: "MwiApi",
     Official: "Official",
     MooketApi: "MooketApi",
     Mooket: "Mooket",
     User: "User",
     Init: "Init",
 };
+
+// MedianMarketCache - 管理历史市场数据快照
+class MedianMarketCache {
+    constructor() {
+        this.cacheKey = "medianMarketSnapshotCache";
+        this.data = null;
+        this.loadFromCache();
+
+        return new Proxy(this, {
+            get(target, prop) {
+                // 优先返回目标对象自身的方法和属性
+                if (prop in target && typeof target[prop] === 'function') {
+                    return target[prop].bind(target);
+                }
+                if (prop === 'market') {
+                    return target.data || {};
+                }
+                if (target.data && prop in target.data) {
+                    return target.data[prop];
+                }
+                return target[prop];
+            },
+            set(target, prop, value) {
+                // 不允许外部直接设置
+                return true;
+            }
+        });
+    }
+
+    loadFromCache() {
+        try {
+            const cached = localStorage.getItem(this.cacheKey);
+            if (cached) {
+                this.data = JSON.parse(cached);
+                console.log('[MedianMarketCache] 从缓存加载历史数据');
+            }
+        } catch (e) {
+            console.error('[MedianMarketCache] 加载缓存失败:', e);
+        }
+    }
+
+    update(currentMarketData) {
+        try {
+            // 深拷贝当前市场数据作为新的历史快照
+            this.data = JSON.parse(JSON.stringify(currentMarketData));
+            // 持久化到 localStorage
+            localStorage.setItem(this.cacheKey, JSON.stringify(this.data));
+            console.log('[MedianMarketCache] 更新历史数据快照');
+        } catch (e) {
+            console.error('[MedianMarketCache] 更新快照失败:', e);
+        }
+    }
+
+    setDefault(defaultMarketData) {
+        // 仅在首次初始化且没有缓存数据时使用
+        if (!this.data && defaultMarketData) {
+            this.data = JSON.parse(JSON.stringify(defaultMarketData));
+            localStorage.setItem(this.cacheKey, JSON.stringify(this.data));
+            console.log('[MedianMarketCache] 设置默认历史数据');
+        }
+    }
+}
 
 class UnifyMarketData {
     constructor(itemDetailMap) {
@@ -232,10 +276,6 @@ class UnifyMarketData {
         this.time = Date.now() / 1000;
         this.initMarketData(itemDetailMap);
 
-        if (globals.profitSettings.dataSourceKeys.includes(DataSourceKey.MwiApi)) {
-            addEventListener(freshnessConfig.cacheKey, (e) => this.updateDataFromMwiApi(e.detail));
-            this.freshnessMarketJson = new MWIApiMarketJson(freshnessConfig);
-        }
         if (globals.profitSettings.dataSourceKeys.includes(DataSourceKey.Official)) {
             addEventListener(officialConfig.cacheKey, (e) => this.updateDataFromOfficialStyle(e.detail, DataSourceKey.Official));
             this.officialMarketJson = new MWIApiMarketJson(officialConfig);
@@ -266,18 +306,12 @@ class UnifyMarketData {
         this.postUpdate();
     }
 
-    updateDataFromMwiApi(marketJson) {
-        const time = marketJson.time;
-        for (const [name, item] of Object.entries(this.market)) {
-            if (item.time > time) continue;
-            const newPrice = marketJson?.market[name];
-            if (!newPrice) continue;
-            Object.assign(item, { ...newPrice, time, src: DataSourceKey.MwiApi });
-        }
-        this.postUpdate();
-    }
-
     updateDataFromOfficialStyle(marketJson, src) {
+        // 在更新新数据前，先保存当前数据作为历史快照
+        if (globals.medianMarketJson?.update) {
+            globals.medianMarketJson.update(this.market);
+        }
+
         const time = marketJson.time;
         for (const [name, item] of Object.entries(this.market)) {
             if (item.time > time) continue;
@@ -372,9 +406,11 @@ class UnifyMarketData {
     }
 
     stat() {
-        let dataSrcArr = [];
+        const dataSrcArr = [];
         for (const [k, val] of Object.entries(DataSourceKey)) {
-            if (this.statMap.src[val]) dataSrcArr.push(`${val} (${formatNumber(this.statMap.src[val] * 100 / this.statMap.src.total)}%)`);
+            if (this.statMap.src[val]) {
+                dataSrcArr.push(`${val} (${formatNumber(this.statMap.src[val] * 100 / this.statMap.src.total)}%)`);
+            }
         }
         const oldestStr = `${globals.en2ZhMap[this.statMap.oldestItem.name]}(${getDuration(new Date(this.statMap.oldestItem.time * 1000))})`;
         const newestStr = `${globals.en2ZhMap[this.statMap.newestItem.name]}(${getDuration(new Date(this.statMap.newestItem.time * 1000))})`;
@@ -384,6 +420,14 @@ class UnifyMarketData {
 }
 
 export async function preFetchData() {
+    // 初始化历史数据缓存
+    globals.medianMarketJson = new MedianMarketCache();
+
+    // 初始化统一市场数据
     globals.freshnessMarketJson = new UnifyMarketData(globals.initClientData_itemDetailMap);
-    globals.medianMarketJson = new MWIApiMarketJson(medianConfig);
+
+    // 如果是第一次运行（没有历史缓存），使用初始市场数据作为默认值
+    if (globals.medianMarketJson?.setDefault) {
+        globals.medianMarketJson.setDefault(globals.freshnessMarketJson.market);
+    }
 };

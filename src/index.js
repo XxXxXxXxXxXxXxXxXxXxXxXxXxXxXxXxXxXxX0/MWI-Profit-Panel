@@ -114,7 +114,7 @@ globals.subscribe((key, value) => {
 const profitSettings = validateProfitSettings(JSON.parse(GM_getValue('profitSettings', JSON.stringify({
     materialPriceMode: 'ask',
     productPriceMode: 'bid',
-    dataSourceKeys: ['MwiApi', 'Official', 'MooketApi', 'Mooket'],
+    dataSourceKeys: ['Official', 'MooketApi', 'Mooket'],
     actionCategories: ['milking', 'foraging', 'woodcutting', 'cheesesmithing', 'crafting', 'tailoring', 'cooking', 'brewing']
 }))));
 globals.profitSettings = profitSettings;

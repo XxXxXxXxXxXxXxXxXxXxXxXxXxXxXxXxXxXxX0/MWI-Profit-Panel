@@ -62,10 +62,6 @@ const modalHTML = `
                             <div class="mb-3">
                                 <label class="form-label">数据来源 (暂时不生效)</label>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="mwiApiCheck" value="MwiApi">
-                                    <label class="form-check-label" for="mwiApiCheck">MWI API</label>
-                                </div>
-                                <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="officialCheck" value="Official">
                                     <label class="form-check-label" for="officialCheck">官方市场</label>
                                 </div>
@@ -90,7 +86,7 @@ const modalHTML = `
 
 export function validateProfitSettings(settings) {
     const validCategories = ['milking', 'foraging', 'woodcutting', 'cheesesmithing', 'crafting', 'tailoring', 'cooking', 'brewing'];
-    const validDataSources = ['MwiApi', 'Official', 'MooketApi', 'Mooket'];
+    const validDataSources = ['Official', 'MooketApi', 'Mooket'];
 
     // 验证price modes
     if (!['ask', 'bid'].includes(settings.materialPriceMode)) {
@@ -142,10 +138,10 @@ export function initSettingsPanel() {
 
             // 保存设置事件
             document.getElementById('saveSettingsBtn').addEventListener('click', () => {
-                const actionCategories = Array.from(document.querySelectorAll('#profitSettingsModal div:nth-child(3) input[type="checkbox"][value]:checked'))
+                const actionCategories = Array.from(document.querySelectorAll('#profitSettingsModal .modal-body > div:nth-child(3) input[type="checkbox"][value]:checked'))
                     .map(checkbox => checkbox.value);
 
-                const dataSourceKeys = Array.from(document.querySelectorAll('#profitSettingsModal div:nth-child(4) input[type="checkbox"][value]:checked'))
+                const dataSourceKeys = Array.from(document.querySelectorAll('#profitSettingsModal .modal-body > div:nth-child(4) input[type="checkbox"][value]:checked'))
                     .map(checkbox => checkbox.value);
 
                 const settings = {
@@ -164,7 +160,7 @@ export function initSettingsPanel() {
             document.getElementById('materialPriceMode').value = settings.materialPriceMode;
             document.getElementById('productPriceMode').value = settings.productPriceMode;
             // 设置默认数据来源选项
-            const dataSourceCheckboxes = document.querySelectorAll('#profitSettingsModal div:nth-child(4) input[type="checkbox"][value]');
+            const dataSourceCheckboxes = document.querySelectorAll('#profitSettingsModal .modal-body > div:nth-child(4) input[type="checkbox"][value]');
             if (settings.dataSourceKeys) {
                 dataSourceCheckboxes.forEach(checkbox => {
                     checkbox.checked = settings.dataSourceKeys.includes(checkbox.value);
@@ -178,7 +174,7 @@ export function initSettingsPanel() {
             }
 
             // 设置默认分类选项
-            const checkboxes = document.querySelectorAll('#profitSettingsModal div:nth-child(3) input[type="checkbox"][value]');
+            const checkboxes = document.querySelectorAll('#profitSettingsModal .modal-body > div:nth-child(3) input[type="checkbox"][value]');
             if (settings.actionCategories) {
                 checkboxes.forEach(checkbox => {
                     checkbox.checked = settings.actionCategories.includes(checkbox.value);

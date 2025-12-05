@@ -6,7 +6,9 @@ import fs from 'fs';
 let last = Date.now();
 const isDev = process.env.NODE_ENV === 'development';
 
-const version = "2025.11.7";
+// 从 package.json 读取版本号
+const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf-8'));
+const version = pkg.version;
 
 function updateBanner() {
     if (Date.now() - last > 1000) last = Date.now();
