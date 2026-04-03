@@ -77,7 +77,7 @@ export function getDropTableInfomation(dropTable, marketJson, teaBuffs = { proce
 
 export function getSvg(iconId) {
     if (globals.initClientData_itemDetailMap[`/items/${iconId}`])
-        return `items_sprite.d4d08849.svg#${iconId}`
+        return `items_sprite.9c39e2ec.svg#${iconId}`
     return `actions_sprite.e6388cbc.svg#${iconId}`
 }
 
