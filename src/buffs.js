@@ -55,6 +55,12 @@ class Buff {
                     break;
             }
         }
+        for (const key in buff) {
+            if (typeof buff[key] === 'number') {
+                // 使用 Number.EPSILON 确保浮点数计算精度，然后四舍五入
+                buff[key] = Math.round((buff[key] + Number.EPSILON) * 100) / 100;
+            }
+        }
         return buff;
     }
 }
