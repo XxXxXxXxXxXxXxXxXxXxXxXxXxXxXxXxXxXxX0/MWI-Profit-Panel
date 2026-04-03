@@ -89,6 +89,23 @@ export default function ProfitCaculation(action, marketJson) {
     // 每小时支出
     const expendPerHour = totalResourcesPricePerAction[buyMode] * actionPerHour + drinksConsumedHourAskPrice[buyMode];
 
+    // --- 新增：每小时经验值计算 ---
+    // 1. 获取基础经验值
+    const baseExpGain = action.experienceGain?.value ?? 0;
+    // 2. 计算总 Wisdom 加成 (加法堆叠)
+    // 包含：茶、社区、装备、房子、成就、个人卷轴
+    const totalWisdomBuff = (teaBuffs.wisdom || 0) + 
+                            (communityBuff.wisdom || 0) + 
+                            (equipmentBuff.wisdom || 0) + 
+                            (houseBuff.wisdom || 0) + 
+                            (achievementBuff.wisdom || 0) + 
+                            (personalBuff.wisdom || 0);
+
+    // 3. 计算单次动作经验值 (严格对应游戏源码逻辑: (1 + flatBoost) * baseValue)
+    const expPerAction = (1 + totalWisdomBuff / 100) * baseExpGain;
+    // 4. 计算每小时经验值
+    const expPerHour = expPerAction * actionPerHour;
+
     const outputItems = [];
     // 基础产出
     let basicOutputValuationPerAction = { ask: 0, bid: 0 }
@@ -157,6 +174,8 @@ export default function ProfitCaculation(action, marketJson) {
         expendPerHour,
         outputPerHour,
         profitPerHour,
+        expPerHour, // 新增：每小时经验
+        expPerAction, // 可选：单次动作经验
 
         baseTimePerActionSec,
         levelEffBuff,
