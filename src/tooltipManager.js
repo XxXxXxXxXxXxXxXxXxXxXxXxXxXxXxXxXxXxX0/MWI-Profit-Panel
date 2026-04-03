@@ -85,11 +85,12 @@ function setupTooltipEvents(tooltip, tooltipContent) {
 }
 
 function formatPercent(percent) {
-    // 1. 先检查是否存在
-    if (percent === undefined || percent === null) return "-";
-    // 2. 强制转换成数字，四舍五入保留两位，再进行显示
-    const formatted = Number(percent).toFixed(2);
-    return formatted > 0 ? `+${formatted}%` : `${formatted}%`;
+    const val = parseFloat(percent);
+    if (!percent || isNaN(val) || Math.abs(val) < 0.0001) {
+        return "-";
+    }
+    const formatted = val.toFixed(2);
+    return val > 0 ? `+${formatted}%` : `${formatted}%`;
 }
 function formatTooltipContent(data) {
     let totalInputAsk = 0, totalInputBid = 0;
