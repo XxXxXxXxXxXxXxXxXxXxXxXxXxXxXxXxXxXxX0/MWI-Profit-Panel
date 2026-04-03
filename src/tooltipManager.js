@@ -283,6 +283,8 @@ function formatTooltipContent(data) {
             <div>每小时动作: ${data.actionPerHour.toFixed(2)}次</div>
             <div>茶减少消耗: ${data.teaBuffs.artisan.toFixed(2)}%</div>
             <div><strong>每小时利润(税后):</strong> ${formatNumber(data.profitPerHour)}</div>
+            <div><strong>单次经验值:</strong> ${formatNumber(data.expPerAction)}</div>
+            <div><strong>每小时经验值:</strong> ${formatNumber(data.expPerHour)}</div>
         `;
     return content;
 }
