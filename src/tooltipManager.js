@@ -206,7 +206,7 @@ function formatTooltipContent(data) {
                             <th style="text-align: right;">效率</th>
                             <th style="text-align: right;">加工</th>
                             <th style="text-align: right;">数量</th>
-                            <th style="text-align: right;">精华</th>
+                            <!--th style="text-align: right;">精华</th>-->
                             <th style="text-align: right;">稀有</th>
                             <th style="text-align: right;">经验</th>
                         </tr>
@@ -216,7 +216,7 @@ function formatTooltipContent(data) {
                             <td style="text-align: right;"><b> ${formatPercent(data.communityBuff.efficiency)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.communityBuff.processing)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.communityBuff.gathering)} </b></td>
-                            <td style="text-align: right;"><b> ${formatPercent(data.communityBuff.essence_find)} </b></td>
+                            <!--td style="text-align: right;"><b> ${formatPercent(data.communityBuff.essence_find)} </b></td>-->
                             <td style="text-align: right;"><b> ${formatPercent(data.communityBuff.rare_find)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.communityBuff.wisdom)} </b></td>
                         </tr>
@@ -226,7 +226,7 @@ function formatTooltipContent(data) {
                             <td style="text-align: right;"><b> ${formatPercent(data.teaBuffs.efficiency)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.teaBuffs.processing)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.teaBuffs.gathering)} </b></td>
-                            <td style="text-align: right;"><b> ${formatPercent(data.teaBuffs.essence_find)} </b></td>
+                            <!--td style="text-align: right;"><b> ${formatPercent(data.teaBuffs.essence_find)} </b></td>-->
                             <td style="text-align: right;"><b> ${formatPercent(data.teaBuffs.rare_find)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.teaBuffs.wisdom)} </b></td>
                         </tr>
@@ -236,7 +236,7 @@ function formatTooltipContent(data) {
                             <td style="text-align: right;"><b> ${formatPercent(data.equipmentBuff.efficiency)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.equipmentBuff.processing)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.equipmentBuff.gathering)} </b></td>
-                            <td style="text-align: right;"><b> ${formatPercent(data.equipmentBuff.essence_find)} </b></td>
+                            <!--td style="text-align: right;"><b> ${formatPercent(data.equipmentBuff.essence_find)} </b></td>-->
                             <td style="text-align: right;"><b> ${formatPercent(data.equipmentBuff.rare_find)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.equipmentBuff.wisdom)} </b></td>
                         </tr>
@@ -253,7 +253,7 @@ function formatTooltipContent(data) {
                             <td style="text-align: right;"><b> ${formatPercent(data.houseBuff.efficiency)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.houseBuff.processing)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.houseBuff.gathering)} </b></td>
-                            <td style="text-align: right;"><b> ${formatPercent(data.houseBuff.essence_find)} </b></td>
+                            <!--td style="text-align: right;"><b> ${formatPercent(data.houseBuff.essence_find)} </b></td>-->
                             <td style="text-align: right;"><b> ${formatPercent(data.houseBuff.rare_find)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.houseBuff.wisdom)} </b></td>
                         </tr>
@@ -263,7 +263,7 @@ function formatTooltipContent(data) {
                             <td style="text-align: right;"><b> ${formatPercent(data.achievementBuff.efficiency)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.achievementBuff.processing)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.achievementBuff.gathering)} </b></td>
-                            <td style="text-align: right;"><b> ${formatPercent(data.achievementBuff.essence_find)} </b></td>
+                            <!--td style="text-align: right;"><b> ${formatPercent(data.achievementBuff.essence_find)} </b></td>-->
                             <td style="text-align: right;"><b> ${formatPercent(data.achievementBuff.rare_find)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.achievementBuff.wisdom)} </b></td>
                         </tr>
@@ -273,7 +273,7 @@ function formatTooltipContent(data) {
                             <td style="text-align: right;"><b> ${formatPercent(data.personalBuff.efficiency)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.personalBuff.processing)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.personalBuff.gathering)} </b></td>
-                            <td style="text-align: right;"><b> ${formatPercent(data.personalBuff.essence_find)} </b></td>
+                            <!--td style="text-align: right;"><b> ${formatPercent(data.personalBuff.essence_find)} </b></td>-->
                             <td style="text-align: right;"><b> ${formatPercent(data.personalBuff.rare_find)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.personalBuff.wisdom)} </b></td>
                         </tr>
