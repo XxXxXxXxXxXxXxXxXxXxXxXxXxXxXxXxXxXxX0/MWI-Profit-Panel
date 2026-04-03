@@ -43,11 +43,11 @@ function updateBanner() {
 }
 
 const prodBanner = `// ==UserScript==
-// @name         MWI Profit Panel
+// @name         MWI Profit Panel II
 // @namespace    http://tampermonkey.net/
 // @version      ${version}
 // @description  milkywayidle游戏利润插件，在右面板添加了根据当前市场数据计算出来的收益详情，掉落记录展示了掉落详情
-// @author       MengLan
+// @author       MengLan、Q7
 // @match        https://www.milkywayidle.com/*
 // @match        https://test.milkywayidle.com/*
 // @match        https://www.milkywayidlecn.com/*
