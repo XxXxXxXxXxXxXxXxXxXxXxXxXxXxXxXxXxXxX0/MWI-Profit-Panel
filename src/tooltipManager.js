@@ -205,7 +205,7 @@ function formatTooltipContent(data) {
                             <th style="text-align: right;">速度</th>
                             <th style="text-align: right;">效率</th>
                             <th style="text-align: right;">加工</th>
-                            <th style="text-align: right;">数量</th>
+                            <th style="text-align: right;">数量/美食</th>
                             <!--th style="text-align: right;">精华</th>-->
                             <th style="text-align: right;">稀有</th>
                             <th style="text-align: right;">经验</th>
