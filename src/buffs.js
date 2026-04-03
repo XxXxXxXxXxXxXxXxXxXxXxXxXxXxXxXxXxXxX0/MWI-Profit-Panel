@@ -67,6 +67,7 @@ class BuffsProvider {
             tea: new Map(),
             equipment: new Map(),
             house: new Map(),
+            achievement: new Map(), // 新增：成就缓存
             // mooPass: new Map(),
         };
 
@@ -76,12 +77,14 @@ class BuffsProvider {
             else if (key === 'initCharacterData_consumableActionTypeBuffsMap') this.updateBuffCache('tea', value);
             else if (key === 'initCharacterData_equipmentActionTypeBuffsMap') this.updateBuffCache('equipment', value);
             else if (key === 'initCharacterData_houseActionTypeBuffsMap') this.updateBuffCache('house', value);
+            else if (key === 'initCharacterData_achievementActionTypeBuffsMap') this.updateBuffCache('achievement', value); // 新增订阅
         });
 
         this.updateBuffCache('community', globals.initCharacterData_communityActionTypeBuffsMap);
         this.updateBuffCache('tea', globals.initCharacterData_consumableActionTypeBuffsMap);
         this.updateBuffCache('equipment', globals.initCharacterData_equipmentActionTypeBuffsMap);
         this.updateBuffCache('house', globals.initCharacterData_houseActionTypeBuffsMap);
+        this.updateBuffCache('achievement', globals.initCharacterData_achievementActionTypeBuffsMap); // 新增初始调用
         // updateBuffCache('mooPass', globals.initCharacterData_houseActionTypeBuffsMap);
     }
 
@@ -112,6 +115,10 @@ class BuffsProvider {
 
     getEquipmentBuff(actionTypeHrid) {
         return this.buffCache.equipment.get(actionTypeHrid) || new Buff();
+    }
+    // 在 BuffsProvider 类中添加新方法
+    getAchievementBuff(actionTypeHrid) {
+    return this.buffCache.achievement.get(actionTypeHrid) || new Buff();
     }
 }
 
