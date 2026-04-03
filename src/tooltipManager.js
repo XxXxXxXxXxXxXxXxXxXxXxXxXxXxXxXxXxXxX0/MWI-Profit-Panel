@@ -280,29 +280,19 @@ function formatTooltipContent(data) {
                     </tbody>
                 </table>
             </div>
-            `;
-    let footerContent = '';
-
-    // 1. MooPass 经验加成逻辑 (兼容性写法，防止脚本环境不支持可选链)
-    const wisdomValue = data.mooPassBuff ? data.mooPassBuff.wisdom : 0;
-    const mooPassDisplay = (wisdomValue > 0) ? formatPercent(wisdomValue) : "-";
-    footerContent += `<div>MooPass经验加成: ${mooPassDisplay}</div>`;
-
-    // 2. 每小时加工产出数量
-    if (data.processingOutputPerHour && data.processingOutputPerHour > 0) {
-        footerContent += `<div>每小时加工产出: ${formatNumber(data.processingOutputPerHour)}</div>`;
-    }
-
-    // 3. 其他基础信息
-    footerContent += `
-        <div>每小时产出数量: ${data.actionOutputPerHour.toFixed(2)}次</div>
-        <div>每小时动作: ${data.actionPerHour.toFixed(2)}次</div>
-        <div>茶减少消耗: ${data.teaBuffs.artisan.toFixed(2)}%</div>
-        <div><strong>每小时利润(税后):</strong> ${formatNumber(data.profitPerHour)}</div>
-        <div><strong>单次经验值:</strong> ${formatNumber(data.expPerAction)}</div>
-        <div><strong>每小时经验值:</strong> ${formatNumber(data.expPerHour)}</div>
-    `;
-
-    // 4. 关键点 2：返回 content 拼接 footerContent 的结果
-    return content + footerContent;
+            ${(() => {
+                // 内部逻辑判断：有的显示数值，没有或为0显示 -
+                const wisdomValue = data.mooPassBuff?.wisdom;
+                const displayValue = (wisdomValue && wisdomValue > 0) 
+                    ? formatPercent(wisdomValue) 
+                    : "-";
+                return `<div>MooPass经验加成: ${displayValue}</div>`;
+            })()}
+            <div>每小时动作: ${data.actionPerHour.toFixed(2)}次</div>
+            <div>茶减少消耗: ${data.teaBuffs.artisan.toFixed(2)}%</div>
+            <div><strong>每小时利润(税后):</strong> ${formatNumber(data.profitPerHour)}</div>
+            <div><strong>单次经验值:</strong> ${formatNumber(data.expPerAction)}</div>
+            <div><strong>每小时经验值:</strong> ${formatNumber(data.expPerHour)}</div>
+        `;
+    return content;
 }
