@@ -101,7 +101,7 @@ export default function ProfitCaculation(action, marketJson) {
         }
     }
     else {
-        basicOutputValuationPerAction = getDropTableInfomation(action.dropTable, marketJson, teaBuffs);
+        basicOutputValuationPerAction = getDropTableInfomation(action.dropTable, marketJson, teaBuffs, personalBuff);
         outputItems.push(...basicOutputValuationPerAction.dropItems);
     }
 
