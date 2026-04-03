@@ -43,6 +43,7 @@ function handleMessage(message) {
                 globals.initCharacterData_equipmentActionTypeBuffsMap = obj.equipmentActionTypeBuffsMap;
                 globals.initCharacterData_achievementActionTypeBuffsMap = obj.achievementActionTypeBuffsMap;
                 globals.initCharacterData_personalActionTypeBuffsMap = obj.personalActionTypeBuffsMap;
+                globals.initCharacterData_mooPassActionTypeBuffsMap = obj.mooPassActionTypeBuffsMap;
                 waitForPannels();
             }
             else if (obj.type === "init_client_data") {
@@ -91,6 +92,10 @@ function handleMessage(message) {
             }
             else if (obj.type === "personal_buffs_updated") {
                 globals.initCharacterData_personalActionTypeBuffsMap = obj.personalActionTypeBuffsMap;
+                refreshProfitPanel(true);
+            }
+            else if (obj.type === "moo_pass_buffs_updated") {
+                globals.initCharacterData_mooPassActionTypeBuffsMap = obj.mooPassActionTypeBuffsMap;
                 refreshProfitPanel(true);
             }
         }
