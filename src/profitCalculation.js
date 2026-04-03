@@ -122,6 +122,7 @@ export default function ProfitCaculation(action, marketJson) {
     else {
         basicOutputValuationPerAction = getDropTableInfomation(action.dropTable, marketJson, teaBuffs, personalBuff);
         outputItems.push(...basicOutputValuationPerAction.dropItems);
+        const processingOutputPerHour = (basicOutputValuationPerAction.totalProcessingCount || 0) * actionPerHour;
     }
 
     // 茶产量额外增益
@@ -167,17 +168,32 @@ export default function ProfitCaculation(action, marketJson) {
     const profitPerHour = outputPerHour[sellMode] - expendPerHour;
     const profitPerDay = profitPerHour * 24;
 
+    // --- 新增：每小时动作产出数量计算 ---
+    // 1. 获取基础产量增益 (Gathering)
+    // 包含：茶、社区、成就、个人卷轴 (MooPass通常不提供产量增益，如有请自行累加)
+    const totalGatheringBuff = (teaBuffs.gathering || 0) + 
+                               (communityBuff.gathering || 0) + 
+                               (achievementBuff.gathering || 0) + 
+                               (personalBuff.gathering || 0);
+    // 2. 计算产量倍率 (例如 110% 变为 1.1)
+    const totalQuantityBuf = (100 + totalGatheringBuff) / 100;
+    // 3. 计算每小时动作产出数量 (实际产出频率)
+    // 公式：每小时动作数 * 产量倍率
+    const actionOutputPerHour = actionPerHour * totalQuantityBuf;
+
     return {
         actionNames: getActionName(action.hrid),
         actionHrid,
         inputItems,
         outputItems,
         actionPerHour,
+        actionOutputPerHour,
         expendPerHour,
         outputPerHour,
         profitPerHour,
         expPerHour, // 新增：每小时经验
         expPerAction, // 可选：单次动作经验
+        processingOutputPerHour: (basicOutputValuationPerAction?.totalProcessingCount || 0) * actionPerHour,
 
         baseTimePerActionSec,
         levelEffBuff,
