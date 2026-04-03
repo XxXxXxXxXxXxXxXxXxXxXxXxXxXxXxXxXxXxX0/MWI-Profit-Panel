@@ -76,8 +76,13 @@ export default function ProfitCaculation(action, marketJson) {
     const totalEffBuff = levelEffBuff + houseBuff.efficiency + teaBuffs.efficiency + equipmentBuff.efficiency + communityBuff.efficiency + achievementBuff.efficiency;
 
     // 每小时动作数（包含工具缩减动作时间）
+    // 修改后的逻辑
     const baseTimePerActionSec = action.baseTimeCost / 1000000000;
-    const actualTimePerActionSec = baseTimePerActionSec / (1 + equipmentBuff.action_speed / 100);
+    // 计算加成后的时间
+    let calculatedTime = baseTimePerActionSec / (1 + equipmentBuff.action_speed / 100);
+    // 新增：设置最低动作为 3 秒 (3s Cap)
+    const actualTimePerActionSec = Math.max(3, calculatedTime); 
+    // 计算每小时动作数
     const actionPerHour = 3600 / actualTimePerActionSec * (1 + totalEffBuff / 100);
 
     // 每小时支出
