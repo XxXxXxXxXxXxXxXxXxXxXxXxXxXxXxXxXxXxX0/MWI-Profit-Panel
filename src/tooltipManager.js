@@ -284,11 +284,11 @@ function formatTooltipContent(data) {
 
     // 1. MooPass 经验加成逻辑
     const wisdomValue = data.mooPassBuff?.wisdom;
+    // 只有当存在且大于0时显示数值，否则显示 "-"
     const mooPassDisplay = (wisdomValue && wisdomValue > 0) ? formatPercent(wisdomValue) : "-";
     footerContent += `<div>MooPass经验加成: ${mooPassDisplay}</div>`;
 
-    // 2. 新增：每小时加工产出数量 (仅在有产出时显示，即采集/掉落类)
-    // data.processingOutputPerHour 由 profitCalculation.js 计算提供
+    // 2. 每小时加工产出数量 (仅在有产出且大于0时显示)
     if (data.processingOutputPerHour && data.processingOutputPerHour > 0) {
         footerContent += `<div>每小时加工产出: ${formatNumber(data.processingOutputPerHour)}</div>`;
     }
@@ -303,9 +303,22 @@ function formatTooltipContent(data) {
         <div><strong>每小时经验值:</strong> ${formatNumber(data.expPerHour)}</div>
     `;
 
+    // 最终返回完整的 HTML 结构
     return `
         <div class="ItemTooltipText_name__2JAHA"><span>${data.actionNames}</span></div>
+        
+        <div style="color: #804600; font-size: 10px;">
+            <table style="width:100%; border-collapse: collapse;">
+                ${inputTableHtmls.join('\n')}
+            </table>
+        </div>
+
+        <div style="color: #804600; font-size: 10px;">
+            <table style="width:100%; border-collapse: collapse;">
+                ${onputTableHtmls.join('\n')}
+            </table>
+        </div>
+
         ${footerContent}
     `;
-    return content;
 }
