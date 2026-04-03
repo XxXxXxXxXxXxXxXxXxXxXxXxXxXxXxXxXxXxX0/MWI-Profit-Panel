@@ -100,7 +100,7 @@ export default function ProfitCaculation(action, marketJson) {
                             (equipmentBuff.wisdom || 0) + 
                             (houseBuff.wisdom || 0) + 
                             (achievementBuff.wisdom || 0) + 
-                            (personalBuff.wisdom || 0); +
+                            (personalBuff.wisdom || 0) +
                             (mooPassBuff.wisdom || 0);
 
     // 3. 计算单次动作经验值 (严格对应游戏源码逻辑: (1 + flatBoost) * baseValue)
