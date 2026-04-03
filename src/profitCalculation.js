@@ -27,6 +27,7 @@ export default function ProfitCaculation(action, marketJson) {
         drinkItems.push({ ...valuation, name: getItemName(drink.itemHrid), countPerHour: 12 });
     }
     const communityBuff = buffs.getCommunityBuff(action.type);
+    const achievementBuff = buffs.getAchievementBuff(action.type); // 新增：获取成就加成
 
     // 原料支出计算
     let inputItems = [];
@@ -72,7 +73,7 @@ export default function ProfitCaculation(action, marketJson) {
     // 特殊装备效率
     const equipmentBuff = buffs.getEquipmentBuff(action.type);
     // 总效率，影响动作数
-    const totalEffBuff = levelEffBuff + houseBuff.efficiency + teaBuffs.efficiency + equipmentBuff.efficiency + communityBuff.efficiency;
+    const totalEffBuff = levelEffBuff + houseBuff.efficiency + teaBuffs.efficiency + equipmentBuff.efficiency + communityBuff.efficiency + achievementBuff.efficiency;
 
     // 每小时动作数（包含工具缩减动作时间）
     const baseTimePerActionSec = action.baseTimeCost / 1000000000;
@@ -99,7 +100,7 @@ export default function ProfitCaculation(action, marketJson) {
     }
 
     // 茶产量额外增益
-    const quantityBuf = (100 + teaBuffs.gathering + communityBuff.gathering) / 100;
+    const quantityBuf = (100 + teaBuffs.gathering + communityBuff.gathering + achievementBuff.gathering) / 100;
     basicOutputValuationPerAction.ask *= quantityBuf;
     basicOutputValuationPerAction.bid *= quantityBuf;
     outputItems.forEach(item => item.count *= quantityBuf);
@@ -118,7 +119,7 @@ export default function ProfitCaculation(action, marketJson) {
     // 稀有掉落
     const rareOutputValuationPerAction = Array.isArray(action?.rareDropTable) ? getDropTableInfomation(action.rareDropTable, marketJson) : { ask: 0, bid: 0 };
     if (rareOutputValuationPerAction.dropItems) {
-        const quantityBuf = (100 + houseBuff.rare_find + equipmentBuff.rare_find) / 100;
+        const quantityBuf = (100 + houseBuff.rare_find + equipmentBuff.rare_find + achievementBuff.rare_find) / 100;
         rareOutputValuationPerAction.ask *= quantityBuf;
         rareOutputValuationPerAction.bid *= quantityBuf;
         rareOutputValuationPerAction.dropItems.forEach(item => item.count *= quantityBuf);
@@ -157,6 +158,7 @@ export default function ProfitCaculation(action, marketJson) {
         communityBuff,
         houseBuff,
         equipmentBuff,
+        achievementBuff,
 
         profitPerDay,
         ProfitMargin: 100 * (profitPerHour) / expendPerHour
