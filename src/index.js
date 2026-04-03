@@ -42,6 +42,7 @@ function handleMessage(message) {
                 globals.initCharacterData_houseActionTypeBuffsMap = obj.houseActionTypeBuffsMap;
                 globals.initCharacterData_equipmentActionTypeBuffsMap = obj.equipmentActionTypeBuffsMap;
                 globals.initCharacterData_achievementActionTypeBuffsMap = obj.achievementActionTypeBuffsMap;
+                globals.initCharacterData_personalActionTypeBuffsMap = obj.personalActionTypeBuffsMap;
                 waitForPannels();
             }
             else if (obj.type === "init_client_data") {
@@ -86,6 +87,10 @@ function handleMessage(message) {
             // --- 新增：成就更新监听 ---
             else if (obj.type === "achievements_updated") {
                 globals.initCharacterData_achievementActionTypeBuffsMap = obj.achievementActionTypeBuffsMap;
+                refreshProfitPanel(true);
+            }
+            else if (obj.type === "personal_buffs_updated") {
+                globals.initCharacterData_personalActionTypeBuffsMap = obj.personalActionTypeBuffsMap;
                 refreshProfitPanel(true);
             }
         }
