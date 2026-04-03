@@ -150,9 +150,9 @@ export const ZHitemNames = zhTranslation.itemNames;
 export const ZHActionNames = zhTranslation.actionNames;
 
 export const processingCategory = {
-    "/action_types/cheesesmithing": ["/action_categories/cheesesmithing/material"],
-    "/action_types/crafting": ["/action_categories/crafting/lumber", "/action_categories/crafting/special"],
-    "/action_types/tailoring": ["/action_categories/tailoring/material"],
+    "/action_types/cheesesmithing": ["/action_categories/cheesesmithing/material", "/action_categories/cheesesmithing/beacon"],
+    "/action_types/crafting": ["/action_categories/crafting/lumber", "/action_categories/crafting/special", "/action_categories/crafting/torch", "/action_categories/crafting/chest_key"],
+    "/action_types/tailoring": ["/action_categories/tailoring/material", "/action_categories/tailoring/shroud"],
 };
 
 export const ZHActionTypeNames = {
