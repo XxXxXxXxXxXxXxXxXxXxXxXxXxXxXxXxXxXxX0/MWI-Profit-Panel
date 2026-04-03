@@ -13,7 +13,7 @@ class GlobalState {
             initCharacterData_consumableActionTypeBuffsMap: {},
             initCharacterData_houseActionTypeBuffsMap: {},
             initCharacterData_equipmentActionTypeBuffsMap: {},
-            initCharacterData_achievementActionTypeBuffsMap = {};
+            initCharacterData_achievementActionTypeBuffsMap: {};
             hasMarketItemUpdate: false,
             isZHInGameSetting: false,
             freshnessMarketJson: {},
