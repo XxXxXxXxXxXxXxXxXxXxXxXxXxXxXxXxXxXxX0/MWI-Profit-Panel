@@ -45,11 +45,10 @@ export function getItemValuation(hrid, marketJson) {
     else return { ask: item.sellPrice, bid: item.sellPrice, medianAsk: item.sellPrice, medianBid: item.sellPrice };
 }
 
+// 修改参数，增加 personalBuffs 默认值
 export function getDropTableInfomation(dropTable, marketJson, teaBuffs = { processing: 0 }, personalBuffs = { processing: 0 }) {
     const valuationResult = { ask: 0, bid: 0 };
     const dropItems = [];
-    // 新增：用于统计每小时加工产出的期望基础值
-    let totalProcessingCount = 0; 
 
     // 计算总加工概率 (茶 + 卷轴/个人加成)
     const totalProcessingRate = (teaBuffs.processing || 0) + (personalBuffs.processing || 0);
@@ -62,20 +61,18 @@ export function getDropTableInfomation(dropTable, marketJson, teaBuffs = { proce
         if (globals.processingMap && totalProcessingRate > 0) {
             const processingAction = globals.processingMap[drop.itemHrid];
             if (processingAction) {
+                // 产出的加工后物品数量
                 const outputItemHrid = processingAction.outputItems[0].itemHrid;
                 const outValuation = getItemValuation(outputItemHrid, marketJson);
                 
-                // 计算触发加工的期望数量 (单次动作的期望值)
+                // 计算触发加工的期望数量
                 const outputCount = (totalProcessingRate / 100) * drop.dropRate;
                 
-                // 累加加工产出的期望数量
-                totalProcessingCount += outputCount; 
-
                 valuationResult.ask += outValuation.ask * outputCount;
                 valuationResult.bid += outValuation.bid * outputCount;
                 dropItems.push({ name: getItemName(outputItemHrid), ...outValuation, count: outputCount });
 
-                // 减少原始未加工物品的数量
+                // 减少原始未加工物品的数量 (消耗掉的原料)
                 dropCount -= outputCount * processingAction.inputItems[0].count;
             }
         }
@@ -84,8 +81,7 @@ export function getDropTableInfomation(dropTable, marketJson, teaBuffs = { proce
         dropItems.push({ itemHrid: drop.itemHrid, name: getItemName(drop.itemHrid), ...valuation, count: dropCount });
     }
 
-    // 将 totalProcessingCount 返回，供 profitCalculation 计算每小时总量
-    return { ...valuationResult, dropItems, totalProcessingCount };
+    return { ...valuationResult, dropItems };
 }
 
 export function getSvg(iconId) {
