@@ -280,15 +280,15 @@ function formatTooltipContent(data) {
                     </tbody>
                 </table>
             </div>
+            `;
     let footerContent = '';
 
-    // 1. MooPass 经验加成逻辑
-    const wisdomValue = data.mooPassBuff?.wisdom;
-    // 只有当存在且大于0时显示数值，否则显示 "-"
-    const mooPassDisplay = (wisdomValue && wisdomValue > 0) ? formatPercent(wisdomValue) : "-";
+    // 1. MooPass 经验加成逻辑 (兼容性写法，防止脚本环境不支持可选链)
+    const wisdomValue = data.mooPassBuff ? data.mooPassBuff.wisdom : 0;
+    const mooPassDisplay = (wisdomValue > 0) ? formatPercent(wisdomValue) : "-";
     footerContent += `<div>MooPass经验加成: ${mooPassDisplay}</div>`;
 
-    // 2. 每小时加工产出数量 (仅在有产出且大于0时显示)
+    // 2. 每小时加工产出数量
     if (data.processingOutputPerHour && data.processingOutputPerHour > 0) {
         footerContent += `<div>每小时加工产出: ${formatNumber(data.processingOutputPerHour)}</div>`;
     }
@@ -303,22 +303,6 @@ function formatTooltipContent(data) {
         <div><strong>每小时经验值:</strong> ${formatNumber(data.expPerHour)}</div>
     `;
 
-    // 最终返回完整的 HTML 结构
-    return `
-        <div class="ItemTooltipText_name__2JAHA"><span>${data.actionNames}</span></div>
-        
-        <div style="color: #804600; font-size: 10px;">
-            <table style="width:100%; border-collapse: collapse;">
-                ${inputTableHtmls.join('\n')}
-            </table>
-        </div>
-
-        <div style="color: #804600; font-size: 10px;">
-            <table style="width:100%; border-collapse: collapse;">
-                ${onputTableHtmls.join('\n')}
-            </table>
-        </div>
-
-        ${footerContent}
-    `;
+    // 4. 关键点 2：返回 content 拼接 footerContent 的结果
+    return content + footerContent;
 }
