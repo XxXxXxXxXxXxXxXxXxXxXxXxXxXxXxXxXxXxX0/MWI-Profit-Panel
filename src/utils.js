@@ -45,25 +45,34 @@ export function getItemValuation(hrid, marketJson) {
     else return { ask: item.sellPrice, bid: item.sellPrice, medianAsk: item.sellPrice, medianBid: item.sellPrice };
 }
 
-export function getDropTableInfomation(dropTable, marketJson, teaBuffs = { processing: 0 }) {
+// 修改参数，增加 personalBuffs 默认值
+export function getDropTableInfomation(dropTable, marketJson, teaBuffs = { processing: 0 }, personalBuffs = { processing: 0 }) {
     const valuationResult = { ask: 0, bid: 0 };
     const dropItems = [];
+
+    // 计算总加工概率 (茶 + 卷轴/个人加成)
+    const totalProcessingRate = (teaBuffs.processing || 0) + (personalBuffs.processing || 0);
+
     for (const drop of dropTable) {
         const valuation = getItemValuation(drop.itemHrid, marketJson);
         let dropCount = ((drop.minCount + drop.maxCount) / 2) * drop.dropRate;
 
-        if (globals.processingMap && teaBuffs.processing) {
+        // 使用总加工概率进行判断
+        if (globals.processingMap && totalProcessingRate > 0) {
             const processingAction = globals.processingMap[drop.itemHrid];
             if (processingAction) {
-                // Add processed production
+                // 产出的加工后物品数量
                 const outputItemHrid = processingAction.outputItems[0].itemHrid;
-                const valuation = getItemValuation(outputItemHrid, marketJson);
-                const outputCount = teaBuffs.processing / 100 * drop.dropRate;
-                valuationResult.ask += valuation.ask * outputCount;
-                valuationResult.bid += valuation.bid * outputCount;
-                dropItems.push({ name: getItemName(outputItemHrid), ...valuation, count: outputCount });
+                const outValuation = getItemValuation(outputItemHrid, marketJson);
+                
+                // 计算触发加工的期望数量
+                const outputCount = (totalProcessingRate / 100) * drop.dropRate;
+                
+                valuationResult.ask += outValuation.ask * outputCount;
+                valuationResult.bid += outValuation.bid * outputCount;
+                dropItems.push({ name: getItemName(outputItemHrid), ...outValuation, count: outputCount });
 
-                // Reduce processed inputItem
+                // 减少原始未加工物品的数量 (消耗掉的原料)
                 dropCount -= outputCount * processingAction.inputItems[0].count;
             }
         }
