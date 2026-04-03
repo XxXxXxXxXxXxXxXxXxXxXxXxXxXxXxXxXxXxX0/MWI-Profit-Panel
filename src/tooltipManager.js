@@ -280,6 +280,14 @@ function formatTooltipContent(data) {
                     </tbody>
                 </table>
             </div>
+            ${(() => {
+                // 内部逻辑判断：有的显示数值，没有或为0显示 -
+                const wisdomValue = data.mooPassBuff?.wisdom;
+                const displayValue = (wisdomValue && wisdomValue > 0) 
+                    ? formatPercent(wisdomValue) 
+                    : "-";
+                return `<div>MooPass经验加成: ${displayValue}</div>`;
+            })()}
             <div>每小时动作: ${data.actionPerHour.toFixed(2)}次</div>
             <div>茶减少消耗: ${data.teaBuffs.artisan.toFixed(2)}%</div>
             <div><strong>每小时利润(税后):</strong> ${formatNumber(data.profitPerHour)}</div>
