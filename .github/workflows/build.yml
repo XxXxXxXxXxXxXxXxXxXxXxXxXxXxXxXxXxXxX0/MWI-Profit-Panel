@@ -1,0 +1,34 @@
+name: Build UserScript
+
+on:
+  push:
+    branches: [ "main" ] # 当代码推送到 main 分支时触发
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:      # 允许手动触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # 建议使用稳定版 Node.js
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build # 执行 package.json 中的打包命令
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-userscript
+          path: dist/ # 
