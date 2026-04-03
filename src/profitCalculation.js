@@ -104,8 +104,7 @@ export default function ProfitCaculation(action, marketJson) {
                             (mooPassBuff.wisdom || 0);
 
     // 3. 计算单次动作经验值 (严格对应游戏源码逻辑: (1 + flatBoost) * baseValue)
-    const expPerAction = (1 + totalWisdomBuff / 100) * baseExpGain;
-    expPerAction = Math.round(expPerAction * 10) / 10;
+    const expPerAction = Math.round(((1 + totalWisdomBuff / 100) * baseExpGain) * 10) / 10;
     // 4. 计算每小时经验值
     const expPerHour = expPerAction * actionPerHour;
 
