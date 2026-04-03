@@ -41,6 +41,7 @@ function handleMessage(message) {
                 globals.initCharacterData_consumableActionTypeBuffsMap = obj.consumableActionTypeBuffsMap;
                 globals.initCharacterData_houseActionTypeBuffsMap = obj.houseActionTypeBuffsMap;
                 globals.initCharacterData_equipmentActionTypeBuffsMap = obj.equipmentActionTypeBuffsMap;
+                globals.initCharacterData_achievementActionTypeBuffsMap = obj.achievementActionTypeBuffsMap;
                 waitForPannels();
             }
             else if (obj.type === "init_client_data") {
@@ -80,6 +81,11 @@ function handleMessage(message) {
             }
             else if (obj.type === "house_rooms_updated") {
                 globals.initCharacterData_houseActionTypeBuffsMap = obj.houseActionTypeBuffsMap;
+                refreshProfitPanel(true);
+            }
+            // --- 新增：成就更新监听 ---
+            else if (obj.type === "achievements_updated") {
+                globals.initCharacterData_achievementActionTypeBuffsMap = obj.achievementActionTypeBuffsMap;
                 refreshProfitPanel(true);
             }
         }
