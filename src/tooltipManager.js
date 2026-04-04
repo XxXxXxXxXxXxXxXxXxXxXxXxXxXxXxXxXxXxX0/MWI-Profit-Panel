@@ -1,6 +1,19 @@
 import { formatNumber } from './utils.js';
 
+function injectGlobalStyles() {
+    if (document.getElementById('mwi-profit-styles')) return; // 防止重复注入
+    const style = document.createElement('style');
+    style.id = 'mwi-profit-styles';
+    style.innerHTML = `
+        .script_key {
+            display: none !important;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
 export function createTooltip() {
+document.head.appendChild(style);
     const tooltip = document.createElement('div');
     tooltip.id = 'profit-tooltip';
     tooltip.setAttribute('role', 'tooltip');
