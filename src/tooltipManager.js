@@ -1,19 +1,28 @@
 import { formatNumber } from './utils.js';
 
-function injectGlobalStyles() {
-    if (document.getElementById('mwi-profit-styles')) return; // 防止重复注入
-    const style = document.createElement('style');
-    style.id = 'mwi-profit-styles';
-    style.innerHTML = `
-        .script_key {
-            display: none !important;
-        }
-    `;
-    document.head.appendChild(style);
-}
+export function createTooltip() {
+    // 增强型样式注入：清理第三方脚本注入的 UI 噪音
+    if (!document.getElementById('mwi-profit-cleaner')) {
+        const style = document.createElement('style');
+        style.id = 'mwi-profit-cleaner';
+        style.innerHTML = `
+            /* 隐藏右上角的钥匙层级数字 */
+            .script_key {
+                display: none !important;
+            }
+            /* 如果你想隐藏左上角的脚本价格标注，取消下面注释 */
+            /* #script_stack_price { display: none !important; } */
+            
+            /* 确保你的 Profit-pannel 容器不会被这些注入物撑开变形 */
+            .Profit-pannel {
+                overflow: hidden !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
 
 export function createTooltip() {
-document.head.appendChild(style);
+    document.head.appendChild(style);
     const tooltip = document.createElement('div');
     tooltip.id = 'profit-tooltip';
     tooltip.setAttribute('role', 'tooltip');
