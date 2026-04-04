@@ -20,6 +20,7 @@ export function createTooltip() {
         `;
         document.head.appendChild(style);
     }
+}
 
 export function createTooltip() {
     document.head.appendChild(style);
