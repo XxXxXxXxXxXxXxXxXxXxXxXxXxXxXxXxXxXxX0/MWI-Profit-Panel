@@ -9,14 +9,10 @@ export function createTooltip() {
         const styleElement = document.createElement('style');
         styleElement.id = 'mwi-profit-cleaner';
         styleElement.innerHTML = `
-            /* 隐藏右上角的钥匙层级数字 */
-            .script_key {
+            /* 仅当 script_key 是我们 Profit-pannel 的直接后代时隐藏 */
+            .Profit-pannel > .script_key {
                 display: none !important;
-            }
-            /* 确保 Profit-pannel 容器不会被第三方注入物撑开变形 */
-            .Profit-pannel {
-                overflow: hidden !important;
-                position: relative !important;
+                visibility: hidden !important;
             }
         `;
         document.head.appendChild(styleElement);
