@@ -17,9 +17,23 @@ function hookWS() {
         if (!(socket instanceof WebSocket)) {
             return oriGet.call(this);
         }
-        if (socket.url.indexOf("api.milkywayidle.com/ws") <= -1 && socket.url.indexOf("api-test.milkywayidle.com/ws") <= -1) {
+
+        // --- 修改开始：动态匹配 API 地址 ---
+        const hostname = window.location.hostname;
+        let wsUrl = "api.milkywayidle.com/ws";
+        let testWsUrl = "api-test.milkywayidle.com/ws";
+
+        // 如果在镜像站，切换匹配的 WS 地址
+        if (hostname.includes("milkywayidlecn.com")) {
+            wsUrl = "api.milkywayidlecn.com/ws";
+            testWsUrl = "api-test.milkywayidlecn.com/ws";
+        }
+
+        // 检查当前 socket 是否属于对应的 API
+        if (socket.url.indexOf(wsUrl) <= -1 && socket.url.indexOf(testWsUrl) <= -1) {
             return oriGet.call(this);
         }
+        // --- 修改结束 ---
 
         const message = oriGet.call(this);
         Object.defineProperty(this, "data", { value: message }); // Anti-loop
