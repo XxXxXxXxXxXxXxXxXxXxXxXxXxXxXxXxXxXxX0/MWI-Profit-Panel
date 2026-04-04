@@ -1,39 +1,42 @@
 import { formatNumber } from './utils.js';
 
+/**
+ * 创建 Tooltip 并注入全局清理样式
+ */
 export function createTooltip() {
-    // 增强型样式注入：清理第三方脚本注入的 UI 噪音
+    // 1. 增强型样式注入：只在不存在时注入一次
     if (!document.getElementById('mwi-profit-cleaner')) {
-        const style = document.createElement('style');
-        style.id = 'mwi-profit-cleaner';
-        style.innerHTML = `
+        const styleElement = document.createElement('style');
+        styleElement.id = 'mwi-profit-cleaner';
+        styleElement.innerHTML = `
             /* 隐藏右上角的钥匙层级数字 */
             .script_key {
                 display: none !important;
             }
-            /* 如果你想隐藏左上角的脚本价格标注，取消下面注释 */
-            /* #script_stack_price { display: none !important; } */
-            
-            /* 确保你的 Profit-pannel 容器不会被这些注入物撑开变形 */
+            /* 确保 Profit-pannel 容器不会被第三方注入物撑开变形 */
             .Profit-pannel {
                 overflow: hidden !important;
+                position: relative !important;
             }
         `;
-        document.head.appendChild(style);
+        document.head.appendChild(styleElement);
     }
-}
 
-export function createTooltip() {
-    document.head.appendChild(style);
+    // 2. 创建 Tooltip 容器元素
     const tooltip = document.createElement('div');
     tooltip.id = 'profit-tooltip';
     tooltip.setAttribute('role', 'tooltip');
     tooltip.className = 'MuiPopper-root MuiTooltip-popper css-55b9xc';
-    tooltip.style.position = 'absolute';
-    tooltip.style.zIndex = '9999';
-    tooltip.style.display = 'none';
-    tooltip.style.pointerEvents = 'none';
-    tooltip.style.margin = '0px';
-    tooltip.style.inset = "0px auto auto 0px";
+    
+    // 设置基础样式
+    Object.assign(tooltip.style, {
+        position: 'absolute',
+        zIndex: '9999',
+        display: 'none',
+        pointerEvents: 'none',
+        margin: '0px',
+        inset: '0px auto auto 0px'
+    });
 
     const tooltipInner = document.createElement('div');
     tooltipInner.className = 'MuiTooltip-tooltip MuiTooltip-tooltipPlacementTop css-1spb1s5';
@@ -42,10 +45,12 @@ export function createTooltip() {
     const tooltipContent = document.createElement('div');
     tooltipContent.className = 'ItemTooltipText_itemTooltipText__zFq3A';
 
+    // 层级组装
     tooltipInner.appendChild(tooltipContent);
     tooltip.appendChild(tooltipInner);
     document.body.appendChild(tooltip);
 
+    // 3. 绑定鼠标事件
     setupTooltipEvents(tooltip, tooltipContent);
 
     return {
