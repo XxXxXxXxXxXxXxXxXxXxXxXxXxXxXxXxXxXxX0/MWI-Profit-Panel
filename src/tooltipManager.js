@@ -4,7 +4,7 @@ import { formatNumber } from './utils.js';
  * 创建 Tooltip 并注入全局清理样式
  */
 export function createTooltip() {
-    // 1. 增强型样式注入：只在不存在时注入一次
+    // 1. 增强型样式注入
     if (!document.getElementById('mwi-profit-cleaner')) {
         const styleElement = document.createElement('style');
         styleElement.id = 'mwi-profit-cleaner';
@@ -99,15 +99,15 @@ function generateDiffInfo(item, type) {
 
 // 辅助函数：格式化可读时间
 function timeReadable(seconds) {
-    if (isNaN(seconds) || seconds === Infinity) return "-";
+    if (isNaN(seconds) || seconds === Infinity || seconds <= 0) return "-";
     const days = Math.floor(seconds / 86400);
     const hrs = Math.floor((seconds % 86400) / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     return days > 0 ? `${days}天 ${hrs}时` : `${hrs}时 ${mins}分`;
 }
 
-// 核心计算逻辑：阶梯式升级预估
-function calculateNeedToLevel(data, targetLvl) {
+// 核心计算逻辑：最简单的除法计算
+function calculateNeedToLevelSimple(data, targetLvl) {
     const initCD = localStorage.getItem("initClientData");
     if (!initCD) return null;
     
@@ -118,32 +118,22 @@ function calculateNeedToLevel(data, targetLvl) {
         const skill = (window.MWIProfitPanel_Globals?.initCharacterData_characterSkills || [])
             .find(s => s.skillHrid === data.skillHrid);
         
-        if (!skill || !expTable) return null;
+        if (!skill || !expTable || !data.expPerHour || data.expPerHour <= 0) return null;
 
-        const currentLvl = skill.level;
         const currentExp = skill.experience;
-        const baseTimeSec = data.baseTimePerActionSec; 
-        const expPerAction = data.expPerAction;
-        const currentEffBuff = data.totalEffBuff || 0; 
+        const targetTotalExp = expTable[targetLvl];
+        
+        if (!targetTotalExp || targetTotalExp <= currentExp) return null;
 
-        let totalTimeSec = 0;
-        let totalActions = 0;
-
-        for (let lvl = currentLvl; lvl < targetLvl; lvl++) {
-            let needExp = (lvl === currentLvl) 
-                ? (expTable[lvl + 1] - currentExp) 
-                : (expTable[lvl + 1] - expTable[lvl]);
-            
-            const actionsToNext = Math.ceil(needExp / expPerAction);
-            totalActions += actionsToNext;
-
-            const stepEff = (currentEffBuff + (lvl - currentLvl)) / 100;
-            totalTimeSec += (actionsToNext * baseTimeSec) / (1 + stepEff);
-        }
+        // 计算总经验缺口
+        const remainingExpTotal = targetTotalExp - currentExp;
+        // 所需时间 = (经验缺口 / 每小时经验) * 3600秒
+        const totalTimeSec = (remainingExpTotal / data.expPerHour) * 3600;
+        // 所需动作次数 = 缺口 / 单次经验 (向上取整)
+        const totalActions = Math.ceil(remainingExpTotal / data.expPerAction);
 
         return { numOfActions: totalActions, timeSec: totalTimeSec };
     } catch (e) {
-        console.error("Calculation error", e);
         return null;
     }
 }
@@ -154,14 +144,13 @@ function setupTooltipEvents(tooltip, tooltipContent) {
     document.addEventListener('mouseover', (e) => {
         const itemContainer = e.target.closest('.Item_item__2De2O.Profit-pannel');
         
-        // 如果鼠标在 Tooltip 本身内部移动，清除隐藏定时器并直接返回
+        // 如果鼠标在 Tooltip 本身内部，不隐藏
         if (e.target.closest('#profit-tooltip')) {
             if (tooltipTimer) clearTimeout(tooltipTimer);
             return;
         }
 
         if (!itemContainer) {
-            // 设置一个短暂延迟再隐藏，方便用户移动鼠标进入 Tooltip
             if (!tooltipTimer) {
                 tooltipTimer = setTimeout(() => {
                     tooltip.style.display = 'none';
@@ -182,30 +171,31 @@ function setupTooltipEvents(tooltip, tooltipContent) {
             tooltipContent.innerHTML = formatTooltipContent(data);
             tooltip.style.display = 'block';
 
-            // 重新获取输入框元素进行事件绑定
+            // 输入框事件绑定
             const input = tooltipContent.querySelector('.profit-lvl-input');
             const resultDisplay = tooltipContent.querySelector('.profit-lvl-result');
             
             if (input && resultDisplay) {
                 const updateDisplay = () => {
                     const target = parseInt(input.value);
-                    const res = calculateNeedToLevel(data, target);
+                    const res = calculateNeedToLevelSimple(data, target);
                     if (res) {
                         resultDisplay.innerHTML = `还需: <b>${formatNumber(res.numOfActions)}</b> 次 [${timeReadable(res.timeSec)}]`;
+                    } else {
+                        resultDisplay.innerHTML = `还需: -`;
                     }
                 };
 
                 input.addEventListener('input', updateDisplay);
                 input.addEventListener('change', updateDisplay);
 
-                // 关键修复：阻止点击、点击、松开鼠标时的事件冒泡，防止游戏原生 UI 框架拦截
+                // 拦截事件冒泡，防止游戏底层点击穿透
                 const stopProp = (ev) => ev.stopPropagation();
                 input.addEventListener('click', stopProp);
                 input.addEventListener('mousedown', stopProp);
                 input.addEventListener('mouseup', stopProp);
             }
 
-            // 计算并设置位置
             const rect = itemContainer.getBoundingClientRect();
             const xPos = Math.max(0, rect.left - tooltip.offsetWidth);
             const yPos = Math.max(0, rect.bottom - tooltip.offsetHeight);
@@ -213,12 +203,11 @@ function setupTooltipEvents(tooltip, tooltipContent) {
             tooltip.setAttribute('data-popper-placement', 'left');
 
         } catch (e) {
-            console.error('Failed to parse tooltip data:', e);
+            console.error('Failed to update tooltip:', e);
         }
     });
 
     document.addEventListener('mouseout', (e) => {
-        // 移出逻辑：如果相关目标是 Tooltip 内部，则保持显示
         const related = e.relatedTarget;
         if (related && related.closest('#profit-tooltip')) return;
 
@@ -287,12 +276,11 @@ function formatTooltipContent(data) {
         onputTableHtmls.push(tableHtml);
     }
 
-    // 预估升级初始计算逻辑集成
+    // 升级预估逻辑集成
     const skill = (window.MWIProfitPanel_Globals?.initCharacterData_characterSkills || [])
         .find(s => s.skillHrid === data.skillHrid);
-    const currentLevel = skill ? skill.level : 0;
-    const targetLvlInitial = currentLevel + 1;
-    const initialNeed = calculateNeedToLevel(data, targetLvlInitial);
+    const targetLvlInitial = (skill?.level || 0) + 1;
+    const initialNeed = calculateNeedToLevelSimple(data, targetLvlInitial);
     
     const estimateHtml = initialNeed ? `
         <div style="background: rgba(128, 70, 0, 0.05); border: 1px solid rgba(128, 70, 0, 0.2); border-radius: 4px; padding: 6px; margin: 8px 0; font-size: 11px; color: #804600; pointer-events: auto;">
@@ -307,7 +295,6 @@ function formatTooltipContent(data) {
         </div>
     ` : '';
 
-    // 格式化tooltip内容
     const content =
         `
         <div class="ItemTooltipText_name__2JAHA"><span>${data.actionNames}</span></div>
