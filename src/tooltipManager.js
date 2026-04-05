@@ -14,24 +14,33 @@ export function createTooltip() {
                 display: none !important;
                 visibility: hidden !important;
             }
+            
+            /* 核心：强制开启 Tooltip 的交互能力，防止游戏原生样式拦截鼠标 */
+            #profit-tooltip, #profit-tooltip * {
+                pointer-events: auto !important;
+            }
+
             /* 交互输入框样式优化 */
             .profit-lvl-input {
-                width: 60px; /* 增加宽度适配三位数 */
-                background: #2b1a0a;
-                color: #f1e4d3;
-                border: 1px solid #804600;
-                border-radius: 3px;
-                padding: 2px 4px;
-                margin: 0 4px;
-                font-family: inherit;
-                font-size: 12px;
-                outline: none;
+                width: 70px !important; /* 增加宽度适配三位数及微调按钮 */
+                background: #2b1a0a !important;
+                color: #f1e4d3 !important;
+                border: 1px solid #804600 !important;
+                border-radius: 3px !important;
+                padding: 2px 4px !important;
+                margin: 0 4px !important;
+                font-family: inherit !important;
+                font-size: 12px !important;
+                outline: none !important;
+                cursor: text !important;
             }
-            /* 确保数字微调按钮（上下箭头）始终显示 */
+
+            /* 确保数字微调按钮（上下箭头）显示且易于点击 */
             .profit-lvl-input::-webkit-inner-spin-button, 
             .profit-lvl-input::-webkit-outer-spin-button { 
                 opacity: 1 !important;
-                height: 20px;
+                height: 18px !important;
+                cursor: pointer !important;
             }
         `;
         document.head.appendChild(styleElement);
@@ -46,9 +55,9 @@ export function createTooltip() {
     // 设置基础样式
     Object.assign(tooltip.style, {
         position: 'absolute',
-        zIndex: '9999',
+        zIndex: '10000', // 确保在最顶层
         display: 'none',
-        pointerEvents: 'auto', // 关键：允许鼠标交互点击输入框
+        pointerEvents: 'auto', 
         margin: '0px',
         inset: '0px auto auto 0px'
     });
@@ -56,9 +65,11 @@ export function createTooltip() {
     const tooltipInner = document.createElement('div');
     tooltipInner.className = 'MuiTooltip-tooltip MuiTooltip-tooltipPlacementTop css-1spb1s5';
     tooltipInner.style.minWidth = "340px";
+    tooltipInner.style.pointerEvents = 'auto';
 
     const tooltipContent = document.createElement('div');
     tooltipContent.className = 'ItemTooltipText_itemTooltipText__zFq3A';
+    tooltipContent.style.pointerEvents = 'auto';
 
     // 层级组装
     tooltipInner.appendChild(tooltipContent);
@@ -142,10 +153,21 @@ function setupTooltipEvents(tooltip, tooltipContent) {
 
     document.addEventListener('mouseover', (e) => {
         const itemContainer = e.target.closest('.Item_item__2De2O.Profit-pannel');
+        
+        // 如果鼠标在 Tooltip 本身内部移动，清除隐藏定时器并直接返回
+        if (e.target.closest('#profit-tooltip')) {
+            if (tooltipTimer) clearTimeout(tooltipTimer);
+            return;
+        }
+
         if (!itemContainer) {
-            // 如果鼠标移入的是 tooltip 本身，不隐藏
-            if (e.target.closest('#profit-tooltip')) return;
-            tooltip.style.display = 'none';
+            // 设置一个短暂延迟再隐藏，方便用户移动鼠标进入 Tooltip
+            if (!tooltipTimer) {
+                tooltipTimer = setTimeout(() => {
+                    tooltip.style.display = 'none';
+                    tooltipTimer = null;
+                }, 150);
+            }
             return;
         }
 
@@ -153,13 +175,17 @@ function setupTooltipEvents(tooltip, tooltipContent) {
         if (!tooltipData) return;
 
         try {
+            if (tooltipTimer) clearTimeout(tooltipTimer);
+            tooltipTimer = null;
+
             const data = JSON.parse(tooltipData);
             tooltipContent.innerHTML = formatTooltipContent(data);
             tooltip.style.display = 'block';
 
-            // 绑定输入框事件
+            // 重新获取输入框元素进行事件绑定
             const input = tooltipContent.querySelector('.profit-lvl-input');
             const resultDisplay = tooltipContent.querySelector('.profit-lvl-result');
+            
             if (input && resultDisplay) {
                 const updateDisplay = () => {
                     const target = parseInt(input.value);
@@ -168,10 +194,15 @@ function setupTooltipEvents(tooltip, tooltipContent) {
                         resultDisplay.innerHTML = `还需: <b>${formatNumber(res.numOfActions)}</b> 次 [${timeReadable(res.timeSec)}]`;
                     }
                 };
-                // 监听 input 和 change 以支持打字输入和上下箭头点击
+
                 input.addEventListener('input', updateDisplay);
                 input.addEventListener('change', updateDisplay);
-                input.addEventListener('click', (ev) => ev.stopPropagation());
+
+                // 关键修复：阻止点击、点击、松开鼠标时的事件冒泡，防止游戏原生 UI 框架拦截
+                const stopProp = (ev) => ev.stopPropagation();
+                input.addEventListener('click', stopProp);
+                input.addEventListener('mousedown', stopProp);
+                input.addEventListener('mouseup', stopProp);
             }
 
             // 计算并设置位置
@@ -181,20 +212,21 @@ function setupTooltipEvents(tooltip, tooltipContent) {
             tooltip.style.transform = `translate(${xPos}px, ${yPos}px)`;
             tooltip.setAttribute('data-popper-placement', 'left');
 
-            if (tooltipTimer) clearTimeout(tooltipTimer);
         } catch (e) {
             console.error('Failed to parse tooltip data:', e);
         }
     });
 
     document.addEventListener('mouseout', (e) => {
-        // 如果移出到 tooltip 内部（包括输入框），则不消失
-        if (e.relatedTarget && e.relatedTarget.closest('#profit-tooltip')) return;
-        
-        if (!e.relatedTarget || !e.relatedTarget.closest('.Item_item__2De2O.Profit-pannel')) {
+        // 移出逻辑：如果相关目标是 Tooltip 内部，则保持显示
+        const related = e.relatedTarget;
+        if (related && related.closest('#profit-tooltip')) return;
+
+        if (!tooltipTimer) {
             tooltipTimer = setTimeout(() => {
                 tooltip.style.display = 'none';
-            }, 100);
+                tooltipTimer = null;
+            }, 150);
         }
     });
 }
@@ -213,8 +245,8 @@ function formatTooltipContent(data) {
     let totalInputMedianAsk = 0, totalInputMedianBid = 0;
     const inputTableHtmls = [];
     for (const input of data.inputItems) {
-        totalInputAsk += input.ask * input.count;
-        totalInputBid += input.bid * input.count;
+        totalInputAsk += (input.ask || 0) * input.count;
+        totalInputBid += (input.bid || 0) * input.count;
         totalInputMedianAsk += (input.medianAsk ?? 0) * input.count;
         totalInputMedianBid += (input.medianBid ?? 0) * input.count;
         const tableHtml =
@@ -236,8 +268,8 @@ function formatTooltipContent(data) {
     let totalOutputMedianAsk = 0, totalOutputMedianBid = 0;
     const onputTableHtmls = [];
     for (const output of data.outputItems) {
-        totalOuputAsk += output.ask * output.count;
-        totalOuputBid += output.bid * output.count;
+        totalOuputAsk += (output.ask || 0) * output.count;
+        totalOuputBid += (output.bid || 0) * output.count;
         totalOutputMedianAsk += (output.medianAsk ?? 0) * output.count;
         totalOutputMedianBid += (output.medianBid ?? 0) * output.count;
         const tableHtml =
@@ -255,7 +287,7 @@ function formatTooltipContent(data) {
         onputTableHtmls.push(tableHtml);
     }
 
-    // 预估升级初始计算逻辑
+    // 预估升级初始计算逻辑集成
     const skill = (window.MWIProfitPanel_Globals?.initCharacterData_characterSkills || [])
         .find(s => s.skillHrid === data.skillHrid);
     const currentLevel = skill ? skill.level : 0;
@@ -263,7 +295,7 @@ function formatTooltipContent(data) {
     const initialNeed = calculateNeedToLevel(data, targetLvlInitial);
     
     const estimateHtml = initialNeed ? `
-        <div style="background: rgba(128, 70, 0, 0.05); border: 1px solid rgba(128, 70, 0, 0.2); border-radius: 4px; padding: 6px; margin: 8px 0; font-size: 11px; color: #804600;">
+        <div style="background: rgba(128, 70, 0, 0.05); border: 1px solid rgba(128, 70, 0, 0.2); border-radius: 4px; padding: 6px; margin: 8px 0; font-size: 11px; color: #804600; pointer-events: auto;">
             <div style="display: flex; align-items: center; margin-bottom: 4px;">
                 <span>升到</span>
                 <input type="number" class="profit-lvl-input" value="${targetLvlInitial}" min="${targetLvlInitial}" max="200" step="1">
