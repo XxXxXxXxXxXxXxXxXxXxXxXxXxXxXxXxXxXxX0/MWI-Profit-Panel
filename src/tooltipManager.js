@@ -14,6 +14,18 @@ export function createTooltip() {
                 display: none !important;
                 visibility: hidden !important;
             }
+            /* 交互输入框样式 */
+            .profit-lvl-input {
+                width: 40px;
+                background: #2b1a0a;
+                color: #f1e4d3;
+                border: 1px solid #804600;
+                border-radius: 3px;
+                padding: 0 2px;
+                margin: 0 4px;
+                font-family: inherit;
+                font-size: 11px;
+            }
         `;
         document.head.appendChild(styleElement);
     }
@@ -29,7 +41,7 @@ export function createTooltip() {
         position: 'absolute',
         zIndex: '9999',
         display: 'none',
-        pointerEvents: 'none',
+        pointerEvents: 'auto', // 修改为 auto 以允许点击输入框
         margin: '0px',
         inset: '0px auto auto 0px'
     });
@@ -58,7 +70,6 @@ export function createTooltip() {
 function generateDiffInfo(item, type) {
     const medianType = type == "ask" ? "medianAsk" : "medianBid";
     if (!item[type] || !item[medianType]) {
-        console.log(item);
         return "";
     }
     const diff = item[type] - item[medianType];
@@ -68,12 +79,68 @@ function generateDiffInfo(item, type) {
     return ` (${sign}${num})`;
 }
 
+// 辅助函数：格式化可读时间
+function timeReadable(seconds) {
+    if (isNaN(seconds) || seconds === Infinity) return "-";
+    const days = Math.floor(seconds / 86400);
+    const hrs = Math.floor((seconds % 86400) / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    return days > 0 ? `${days}天 ${hrs}时` : `${hrs}时 ${mins}分`;
+}
+
+// 核心计算逻辑：阶梯式升级预估
+function calculateNeedToLevel(data, targetLvl) {
+    // 获取经验表 (通常由 index.js 存放在 globals 或直接从本地存储解压)
+    const initCD = localStorage.getItem("initClientData");
+    if (!initCD) return null;
+    
+    try {
+        const decomCD = JSON.parse(LZString.decompressFromUTF16(initCD));
+        const expTable = decomCD.levelExperienceTable;
+        
+        // 获取当前技能数据
+        const skill = (window.MWIProfitPanel_Globals?.initCharacterData_characterSkills || [])
+            .find(s => s.skillHrid === data.skillHrid);
+        
+        if (!skill || !expTable) return null;
+
+        const currentLvl = skill.level;
+        const currentExp = skill.experience;
+        const baseTimeSec = data.baseTimePerActionSec; // 基础时间
+        const expPerAction = data.expPerAction;
+        const currentEffBuff = data.totalEffBuff || 0; // 当前总效率百分比
+
+        let totalTimeSec = 0;
+        let totalActions = 0;
+
+        for (let lvl = currentLvl; lvl < targetLvl; lvl++) {
+            let needExp = (lvl === currentLvl) 
+                ? (expTable[lvl + 1] - currentExp) 
+                : (expTable[lvl + 1] - expTable[lvl]);
+            
+            const actionsToNext = Math.ceil(needExp / expPerAction);
+            totalActions += actionsToNext;
+
+            // 升级效率收益：每升一级，效率额外增加 1%
+            const stepEff = (currentEffBuff + (lvl - currentLvl)) / 100;
+            totalTimeSec += (actionsToNext * baseTimeSec) / (1 + stepEff);
+        }
+
+        return { numOfActions: totalActions, timeSec: totalTimeSec };
+    } catch (e) {
+        console.error("Calculation error", e);
+        return null;
+    }
+}
+
 function setupTooltipEvents(tooltip, tooltipContent) {
     let tooltipTimer = null;
 
     document.addEventListener('mouseover', (e) => {
         const itemContainer = e.target.closest('.Item_item__2De2O.Profit-pannel');
         if (!itemContainer) {
+            // 如果鼠标移入的是 tooltip 本身，不隐藏
+            if (e.target.closest('#profit-tooltip')) return;
             tooltip.style.display = 'none';
             return;
         }
@@ -85,6 +152,21 @@ function setupTooltipEvents(tooltip, tooltipContent) {
             const data = JSON.parse(tooltipData);
             tooltipContent.innerHTML = formatTooltipContent(data);
             tooltip.style.display = 'block';
+
+            // 绑定输入框事件
+            const input = tooltipContent.querySelector('.profit-lvl-input');
+            const resultDisplay = tooltipContent.querySelector('.profit-lvl-result');
+            if (input && resultDisplay) {
+                const updateDisplay = () => {
+                    const target = parseInt(input.value);
+                    const res = calculateNeedToLevel(data, target);
+                    if (res) {
+                        resultDisplay.innerHTML = `还需: <b>${formatNumber(res.numOfActions)}</b> 次 [${timeReadable(res.timeSec)}]`;
+                    }
+                };
+                input.addEventListener('input', updateDisplay);
+                input.addEventListener('click', (ev) => ev.stopPropagation());
+            }
 
             // 计算并设置位置
             const rect = itemContainer.getBoundingClientRect();
@@ -100,10 +182,13 @@ function setupTooltipEvents(tooltip, tooltipContent) {
     });
 
     document.addEventListener('mouseout', (e) => {
+        // 如果移出到 tooltip 内部，则不消失
+        if (e.relatedTarget && e.relatedTarget.closest('#profit-tooltip')) return;
+        
         if (!e.relatedTarget || !e.relatedTarget.closest('.Item_item__2De2O.Profit-pannel')) {
             tooltipTimer = setTimeout(() => {
                 tooltip.style.display = 'none';
-            }, 0);
+            }, 100);
         }
     });
 }
@@ -116,6 +201,7 @@ function formatPercent(percent) {
     const formatted = val.toFixed(2);
     return val > 0 ? `+${formatted}%` : `${formatted}%`;
 }
+
 function formatTooltipContent(data) {
     let totalInputAsk = 0, totalInputBid = 0;
     let totalInputMedianAsk = 0, totalInputMedianBid = 0;
@@ -163,11 +249,31 @@ function formatTooltipContent(data) {
         onputTableHtmls.push(tableHtml);
     }
 
+    // 预估升级初始计算
+    const skill = (window.MWIProfitPanel_Globals?.initCharacterData_characterSkills || [])
+        .find(s => s.skillHrid === data.skillHrid);
+    const currentLevel = skill ? skill.level : 0;
+    const targetLvl = currentLevel + 1;
+    const initialNeed = calculateNeedToLevel(data, targetLvl);
+    const estimateHtml = initialNeed ? `
+        <div style="background: rgba(128, 70, 0, 0.05); border: 1px solid rgba(128, 70, 0, 0.2); border-radius: 4px; padding: 6px; margin: 8px 0; font-size: 11px; color: #804600;">
+            <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                <span>升到</span>
+                <input type="number" class="profit-lvl-input" value="${targetLvl}" min="${targetLvl}" max="200">
+                <span>级预估:</span>
+            </div>
+            <div class="profit-lvl-result">
+                还需: <b>${formatNumber(initialNeed.numOfActions)}</b> 次 [${timeReadable(initialNeed.timeSec)}]
+            </div>
+        </div>
+    ` : '';
 
     // 格式化tooltip内容
     const content =
         `
         <div class="ItemTooltipText_name__2JAHA"><span>${data.actionNames}</span></div>
+            
+            ${estimateHtml}
 
             <div style="color: #804600; font-size: 10px;">
                 <table style="width:100%; border-collapse: collapse;">
@@ -230,7 +336,6 @@ function formatTooltipContent(data) {
                             <th style="text-align: right;">效率</th>
                             <th style="text-align: right;">加工</th>
                             <th style="text-align: right;">数量/美食</th>
-                            <!--th style="text-align: right;">精华</th>-->
                             <th style="text-align: right;">稀有</th>
                             <th style="text-align: right;">经验</th>
                         </tr>
@@ -240,7 +345,6 @@ function formatTooltipContent(data) {
                             <td style="text-align: right;"><b> ${formatPercent(data.communityBuff.efficiency)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.communityBuff.processing)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.communityBuff.gathering)} </b></td>
-                            <!--td style="text-align: right;"><b> ${formatPercent(data.communityBuff.essence_find)} </b></td>-->
                             <td style="text-align: right;"><b> ${formatPercent(data.communityBuff.rare_find)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.communityBuff.wisdom)} </b></td>
                         </tr>
@@ -250,7 +354,6 @@ function formatTooltipContent(data) {
                             <td style="text-align: right;"><b> ${formatPercent(data.teaBuffs.efficiency)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.teaBuffs.processing)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.teaBuffs.gathering)} </b></td>
-                            <!--td style="text-align: right;"><b> ${formatPercent(data.teaBuffs.essence_find)} </b></td>-->
                             <td style="text-align: right;"><b> ${formatPercent(data.teaBuffs.rare_find)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.teaBuffs.wisdom)} </b></td>
                         </tr>
@@ -260,7 +363,6 @@ function formatTooltipContent(data) {
                             <td style="text-align: right;"><b> ${formatPercent(data.equipmentBuff.efficiency)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.equipmentBuff.processing)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.equipmentBuff.gathering)} </b></td>
-                            <!--td style="text-align: right;"><b> ${formatPercent(data.equipmentBuff.essence_find)} </b></td>-->
                             <td style="text-align: right;"><b> ${formatPercent(data.equipmentBuff.rare_find)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.equipmentBuff.wisdom)} </b></td>
                         </tr>
@@ -270,6 +372,8 @@ function formatTooltipContent(data) {
                             <td style="text-align: right;"><b> ${formatPercent(data.levelEffBuff)} </b></td>
                             <td style="text-align: right;"><b> - </b></td>
                             <td style="text-align: right;"><b> - </b></td>
+                            <td style="text-align: right;"><b> - </b></td>
+                            <td style="text-align: right;"><b> - </b></td>
                         </tr>
                         <tr style="border-bottom: 1px solid #804600;">
                             <td style="text-align: right;"><b>房子</b></td>
@@ -277,7 +381,6 @@ function formatTooltipContent(data) {
                             <td style="text-align: right;"><b> ${formatPercent(data.houseBuff.efficiency)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.houseBuff.processing)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.houseBuff.gathering)} </b></td>
-                            <!--td style="text-align: right;"><b> ${formatPercent(data.houseBuff.essence_find)} </b></td>-->
                             <td style="text-align: right;"><b> ${formatPercent(data.houseBuff.rare_find)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.houseBuff.wisdom)} </b></td>
                         </tr>
@@ -287,7 +390,6 @@ function formatTooltipContent(data) {
                             <td style="text-align: right;"><b> ${formatPercent(data.achievementBuff.efficiency)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.achievementBuff.processing)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.achievementBuff.gathering)} </b></td>
-                            <!--td style="text-align: right;"><b> ${formatPercent(data.achievementBuff.essence_find)} </b></td>-->
                             <td style="text-align: right;"><b> ${formatPercent(data.achievementBuff.rare_find)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.achievementBuff.wisdom)} </b></td>
                         </tr>
@@ -297,7 +399,6 @@ function formatTooltipContent(data) {
                             <td style="text-align: right;"><b> ${formatPercent(data.personalBuff.efficiency)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.personalBuff.processing)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.personalBuff.gathering)} </b></td>
-                            <!--td style="text-align: right;"><b> ${formatPercent(data.personalBuff.essence_find)} </b></td>-->
                             <td style="text-align: right;"><b> ${formatPercent(data.personalBuff.rare_find)} </b></td>
                             <td style="text-align: right;"><b> ${formatPercent(data.personalBuff.wisdom)} </b></td>
                         </tr>
@@ -305,7 +406,6 @@ function formatTooltipContent(data) {
                 </table>
             </div>
             ${(() => {
-                // 内部逻辑判断：有的显示数值，没有或为0显示 -
                 const wisdomValue = data.mooPassBuff?.wisdom;
                 const displayValue = (wisdomValue && wisdomValue > 0) 
                     ? formatPercent(wisdomValue) 
