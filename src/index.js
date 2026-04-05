@@ -76,8 +76,10 @@ function handleMessage(message) {
             }
             else if (obj.type === "skills_updated") {
                 setTimeout(() => {
-                    if (getMwiObj()?.game?.state?.characterSkillMap) {
-                        globals.initCharacterData_characterSkills = [...getMwiObj()?.game?.state.characterSkillMap.values()];
+                    // 兼容全局对象获取方式
+                    const mwiObj = typeof getMwiObj === 'function' ? getMwiObj() : window.getMwiObj?.();
+                    if (mwiObj?.game?.state?.characterSkillMap) {
+                        globals.initCharacterData_characterSkills = [...mwiObj.game.state.characterSkillMap.values()];
                         refreshProfitPanel(true);
                     }
                     else console.error(obj);
@@ -99,7 +101,7 @@ function handleMessage(message) {
                 globals.initCharacterData_houseActionTypeBuffsMap = obj.houseActionTypeBuffsMap;
                 refreshProfitPanel(true);
             }
-            // --- 新增：成就更新监听 ---
+            // --- 成就更新监听 ---
             else if (obj.type === "achievements_updated") {
                 globals.initCharacterData_achievementActionTypeBuffsMap = obj.achievementActionTypeBuffsMap;
                 refreshProfitPanel(true);
