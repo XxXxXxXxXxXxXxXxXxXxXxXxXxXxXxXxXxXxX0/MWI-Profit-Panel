@@ -14,11 +14,6 @@ export function createTooltip() {
                 display: none !important;
                 visibility: hidden !important;
             }
-            
-            /* 核心：强制开启 Tooltip 的交互能力，防止游戏原生样式拦截鼠标 */
-            #profit-tooltip, #profit-tooltip * {
-                pointer-events: auto !important;
-            }
 
             /* 交互输入框样式优化 */
             .profit-lvl-input {
