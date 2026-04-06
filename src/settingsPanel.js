@@ -4,7 +4,7 @@ import { refreshProfitPanel } from './panelManager.js';
 const modalHTML = `
             <div class="modal fade" id="profitSettingsModal" tabindex="-1" style="z-index: 100000;" aria-hidden="true">
                 <div class="modal-dialog">
-                    <div class="modal-content style="color: orange;height: 100%;"">
+                    <div class="modal-content" style="color: orange;height: 100%;">
                         <div class="modal-header">
                             <h5 class="modal-title">收益设置</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
