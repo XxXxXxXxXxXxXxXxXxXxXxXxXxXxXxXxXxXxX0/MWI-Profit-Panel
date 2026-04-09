@@ -43,10 +43,12 @@ function updateBanner() {
 }
 
 const prodBanner = `// ==UserScript==
-// @name         MWI Profit Panel II
-// @namespace    http://tampermonkey.net/
-// @version      ${version}
-// @description  milkywayidle游戏利润插件，在右面板添加了根据当前市场数据计算出来的收益详情，掉落记录展示了掉落详情
+// @name           MWI Profit Panel II
+// @name:en        MWI Profit Panel II
+// @namespace      http://tampermonkey.net/
+// @version        ${version}
+// @description    milkywayidle游戏利润插件，在右面板添加了根据当前市场数据计算出来的收益详情，掉落记录展示了掉落详情
+// @description:en The milkywayidle game profit plugin adds profit details calculated based on current market data to the right panel, and the drop log displays drop details.
 // @author       MengLan、Q7
 // @match        https://www.milkywayidle.com/*
 // @match        https://test.milkywayidle.com/*
