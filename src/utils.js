@@ -1,19 +1,31 @@
 import globals from "./globals";
 import zhTranslation from "./zhTranslation";
 
+/**
+ * 新增：国际化辅助函数
+ * 根据当前游戏语言设置返回对应文本
+ */
+export function t(zh, en) {
+    return globals.isZHInGameSetting ? zh : en;
+}
+
 export function getItemName(itemHrid) {
     if (globals.isZHInGameSetting) return ZHitemNames[itemHrid];
-    else return globals.initClientData_itemDetailMap[itemHrid].name;
+    // 增加容错：如果找不到 Hrid 对应的 name，返回 Hrid 本身
+    else return globals.initClientData_itemDetailMap[itemHrid]?.name || itemHrid;
 }
 
 export function getActionName(actionHrid) {
     if (globals.isZHInGameSetting) return ZHActionNames[actionHrid];
-    else return globals.initClientData_actionDetailMap[actionHrid].name;
+    else return globals.initClientData_actionDetailMap[actionHrid]?.name || actionHrid;
 }
 
 export function getItemValuation(hrid, marketJson) {
     const item = globals.initClientData_itemDetailMap[hrid];
-    if (!item) { console.log(`${hrid} can't found the item detail`); return { bid: 0, ask: 0 }; }
+    if (!item) { 
+        console.log(`${hrid} can't found the item detail`); 
+        return { bid: 0, ask: 0 }; 
+    }
     if (item?.isTradable) {
         const ret = { ...marketJson.market[item.name] };
         if (ret.bid == -1 && ret.ask == -1) ret.ask = ret.bid = 1e9;
@@ -45,34 +57,25 @@ export function getItemValuation(hrid, marketJson) {
     else return { ask: item.sellPrice, bid: item.sellPrice, medianAsk: item.sellPrice, medianBid: item.sellPrice };
 }
 
-// 修改参数，增加 personalBuffs 默认值
 export function getDropTableInfomation(dropTable, marketJson, teaBuffs = { processing: 0 }, personalBuffs = { processing: 0 }) {
     const valuationResult = { ask: 0, bid: 0 };
     const dropItems = [];
-
-    // 计算总加工概率 (茶 + 卷轴/个人加成)
     const totalProcessingRate = (teaBuffs.processing || 0) + (personalBuffs.processing || 0);
 
     for (const drop of dropTable) {
         const valuation = getItemValuation(drop.itemHrid, marketJson);
         let dropCount = ((drop.minCount + drop.maxCount) / 2) * drop.dropRate;
 
-        // 使用总加工概率进行判断
         if (globals.processingMap && totalProcessingRate > 0) {
             const processingAction = globals.processingMap[drop.itemHrid];
             if (processingAction) {
-                // 产出的加工后物品数量
                 const outputItemHrid = processingAction.outputItems[0].itemHrid;
                 const outValuation = getItemValuation(outputItemHrid, marketJson);
-                
-                // 计算触发加工的期望数量
                 const outputCount = (totalProcessingRate / 100) * drop.dropRate;
                 
                 valuationResult.ask += outValuation.ask * outputCount;
                 valuationResult.bid += outValuation.bid * outputCount;
                 dropItems.push({ name: getItemName(outputItemHrid), ...outValuation, count: outputCount });
-
-                // 减少原始未加工物品的数量 (消耗掉的原料)
                 dropCount -= outputCount * processingAction.inputItems[0].count;
             }
         }
@@ -80,7 +83,6 @@ export function getDropTableInfomation(dropTable, marketJson, teaBuffs = { proce
         valuationResult.bid += valuation.bid * dropCount;
         dropItems.push({ itemHrid: drop.itemHrid, name: getItemName(drop.itemHrid), ...valuation, count: dropCount });
     }
-
     return { ...valuationResult, dropItems };
 }
 
@@ -115,28 +117,28 @@ export function getDuration(date) {
 export function mooketStatus() {
     try {
         if (mwi?.game) {
-            return `已安装`;
+            return t("已安装", "Installed");
         }
-        return `加载异常`;
+        return t("加载异常", "Error");
     }
     catch (e) { }
-    return `未安装`;
+    return t("未安装", "Not Installed");
 }
 
 export function formatDuration(diffMs) {
     const diffSeconds = Math.floor(diffMs / 1000);
-    if (diffSeconds < 60) return `${diffSeconds}秒前`;
+    if (diffSeconds < 60) return t(`${diffSeconds}秒前`, `${diffSeconds}s ago`);
 
     const diffMinutes = Math.floor(diffSeconds / 60);
-    if (diffMinutes < 60) return `${diffMinutes}分钟前`;
+    if (diffMinutes < 60) return t(`${diffMinutes}分钟前`, `${diffMinutes}m ago`);
 
     const diffHours = Math.floor(diffMinutes / 60);
-    return `${diffHours}小时 ${diffMinutes - diffHours * 60}分钟前`;
+    return t(`${diffHours}小时 ${diffMinutes - diffHours * 60}分钟前`, `${diffHours}h ${diffMinutes - diffHours * 60}m ago`);
 }
 
 export function getMwiObj() {
     try {
-        if (mwi) return mwi;
+        if (typeof mwi !== "undefined") return mwi;
         return null;
     }
     catch (e) {
@@ -164,16 +166,28 @@ export const processingCategory = {
     "/action_types/tailoring": ["/action_categories/tailoring/material", "/action_categories/tailoring/labyrinth"],
 };
 
-export const ZHActionTypeNames = {
-    milking: "\u6324\u5976",
-    foraging: "\u91c7\u6458",
-    woodcutting: "\u4f10\u6728",
-    cheesesmithing: "\u5976\u916a\u953b\u9020",
-    crafting: "\u5236\u4f5c",
-    tailoring: "\u7f1d\u7eab",
-    cooking: "\u70f9\u996a",
-    brewing: "\u51b2\u6ce1",
-}
+/**
+ * 核心逻辑修改：ZHActionTypeNames 现在通过函数动态生成
+ * 以支持根据 globals.isZHInGameSetting 实时切换
+ */
+export const getActionTypeDisplayName = (type) => {
+    const names = {
+        milking: t("挤奶", "Milking"),
+        foraging: t("采摘", "Foraging"),
+        woodcutting: t("伐木", "Woodcutting"),
+        cheesesmithing: t("奶酪锻造", "Cheesesmithing"),
+        crafting: t("制作", "Crafting"),
+        tailoring: t("缝纫", "Tailoring"),
+        cooking: t("烹饪", "Cooking"),
+        brewing: t("冲泡", "Brewing"),
+    };
+    return names[type] || type;
+};
+
+// 为了向下兼容原有代码中的 ZHActionTypeNames[type] 调用
+export const ZHActionTypeNames = new Proxy({}, {
+    get: (target, prop) => getActionTypeDisplayName(prop)
+});
 
 const OneSecond = 1000;
 const OneMinute = 60 * OneSecond;
