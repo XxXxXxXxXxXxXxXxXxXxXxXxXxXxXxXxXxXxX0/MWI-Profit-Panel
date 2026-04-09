@@ -1,4 +1,4 @@
-import { formatNumber, getDuration, getMwiObj, TimeSpan, } from './utils.js';
+import { formatNumber, getDuration, getMwiObj, TimeSpan, t } from './utils.js'; // 引入 t 函数
 import globals from './globals.js';
 
 
@@ -405,6 +405,7 @@ class UnifyMarketData {
         GM_setValue('UnifyMarketData', JSON.stringify(this.market));
     }
 
+    // --- 国际化修改内容 ---
     stat() {
         const dataSrcArr = [];
         for (const [k, val] of Object.entries(DataSourceKey)) {
@@ -412,10 +413,15 @@ class UnifyMarketData {
                 dataSrcArr.push(`${val} (${formatNumber(this.statMap.src[val] * 100 / this.statMap.src.total)}%)`);
             }
         }
-        const oldestStr = `${globals.en2ZhMap[this.statMap.oldestItem.name]}(${getDuration(new Date(this.statMap.oldestItem.time * 1000))})`;
-        const newestStr = `${globals.en2ZhMap[this.statMap.newestItem.name]}(${getDuration(new Date(this.statMap.newestItem.time * 1000))})`;
 
-        return `最旧：${oldestStr} 数据来源：[${dataSrcArr.join(',')}]`;
+        const oldestName = globals.isZHInGameSetting 
+            ? (globals.en2ZhMap[this.statMap.oldestItem.name] || this.statMap.oldestItem.name)
+            : this.statMap.oldestItem.name;
+
+        const oldestStr = `${oldestName}(${getDuration(new Date(this.statMap.oldestItem.time * 1000))})`;
+        
+        // 使用 t 函数处理静态标签
+        return `${t('最旧', 'Oldest')}：${oldestStr} ${t('数据来源', 'Sources')}：[${dataSrcArr.join(',')}]`;
     }
 }
 
