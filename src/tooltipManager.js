@@ -175,7 +175,7 @@ function setupTooltipEvents(tooltip, tooltipContent) {
                     const target = parseInt(input.value);
                     const res = calculateNeedToLevelSimple(data, target);
                     if (res) {
-                        resultDisplay.innerHTML = `${t('还需', 'Need')}: <b>${formatNumber(res.numOfActions)}</b> ${t('次', 'times')} [${timeReadable(res.timeSec)}]`;
+                        resultDisplay.innerHTML = `${t('还需', 'Need')}: <b>${formatNumber(res.numOfActions)}</b> ${t('次', 'Action')} [${timeReadable(res.timeSec)}]`;
                     } else {
                         resultDisplay.innerHTML = `${t('还需', 'Need')}: -`;
                     }
@@ -280,10 +280,10 @@ function formatTooltipContent(data) {
             <div style="display: flex; align-items: center; margin-bottom: 4px;">
                 <span>${t('升到', 'Level to')}</span>
                 <input type="number" class="profit-lvl-input" value="${targetLvlInitial}" min="${targetLvlInitial}" max="200" step="1">
-                <span>${t('级预估:', ' Est:')}</span>
+                <span>${t('级预估:', ' Estimate:')}</span>
             </div>
             <div class="profit-lvl-result">
-                ${t('还需', 'Need')}: <b>${formatNumber(initialNeed.numOfActions)}</b> ${t('次', 'times')} [${timeReadable(initialNeed.timeSec)}]
+                ${t('还需', 'Need')}: <b>${formatNumber(initialNeed.numOfActions)}</b> ${t('次', 'Action')} [${timeReadable(initialNeed.timeSec)}]
             </div>
         </div>
     ` : '';
@@ -350,11 +350,11 @@ function formatTooltipContent(data) {
                 <table style="width:100%; border-collapse: collapse;">
                     <tbody>
                         <tr style="border-bottom: 1px solid #804600;">
-                            <th style="text-align: right;">${t('类型', 'Type')}</th>
-                            <th style="text-align: right;">${t('速度', 'Spd')}</th>
-                            <th style="text-align: right;">${t('效率', 'Effi')}</th>
+                            <th style="text-align: right;">${t('类型', 'Buff Type')}</th>
+                            <th style="text-align: right;">${t('速度', 'Speed')}</th>
+                            <th style="text-align: right;">${t('效率', 'Eff.')}</th>
                             <th style="text-align: right;">${t('加工', 'Proc')}</th>
-                            <th style="text-align: right;">${t('数量/美食', 'Qty/Food')}</th>
+                            <th style="text-align: right;">${t('数量/美食', 'Gath./Gmt.')}</th>
                             <th style="text-align: right;">${t('稀有', 'Rare')}</th>
                             <th style="text-align: right;">${t('经验', 'Exp')}</th>
                         </tr>
@@ -432,10 +432,10 @@ function formatTooltipContent(data) {
                 return `<div>MooPass ${t('经验加成', 'Exp Buff')}: ${displayValue}</div>`;
             })()}
             <div>${t('每小时动作:', 'Actions/h:')} ${data.actionPerHour.toFixed(2)}</div>
-            <div>${t('茶减少消耗:', 'Tea Consumption Reduc:')} ${data.teaBuffs.artisan.toFixed(2)}%</div>
+            <div>${t('茶减少消耗:', 'Artisan Buff:')} ${data.teaBuffs.artisan.toFixed(2)}%</div>
             <div><strong>${t('每小时利润(税后):', 'Profit/h (Taxed):')}</strong> ${formatNumber(data.profitPerHour)}</div>
-            <div><strong>${t('单次经验值:', 'Exp per Action:')}</strong> ${formatNumber(data.expPerAction)}</div>
-            <div><strong>${t('每小时经验值:', 'Exp per Hour:')}</strong> ${formatNumber(data.expPerHour)}</div>
+            <div><strong>${t('单次经验值:', 'Exp/Action:')}</strong> ${formatNumber(data.expPerAction)}</div>
+            <div><strong>${t('每小时经验值:', 'Exp/h:')}</strong> ${formatNumber(data.expPerHour)}</div>
         `;
     return content;
 }
