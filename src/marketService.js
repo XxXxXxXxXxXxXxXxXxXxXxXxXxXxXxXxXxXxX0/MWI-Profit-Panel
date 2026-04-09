@@ -421,7 +421,7 @@ class UnifyMarketData {
         const oldestStr = `${oldestName}(${getDuration(new Date(this.statMap.oldestItem.time * 1000))})`;
         
         // 使用 t 函数处理静态标签
-        return `${t('最旧', 'Oldest')}：${oldestStr} ${t('数据来源', 'Sources')}：[${dataSrcArr.join(',')}]`;
+        return `${t('最旧', 'Oldest')}：${oldestStr} ${t('数据来源', 'Data Source')}：[${dataSrcArr.join(',')}]`;
     }
 }
 
