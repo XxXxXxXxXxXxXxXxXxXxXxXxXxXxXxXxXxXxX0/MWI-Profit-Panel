@@ -62,10 +62,10 @@ export default function LostTrackerExpectEstimate() {
 
             // --- 国际化修改内容 ---
             const sign = getSign(excessProfit);
-            const content = `${t('支出', 'Cost')}: ${formatNumber(outcome)} ` + 
-                            `${t('收入', 'Rev')}: ${formatNumber(actualIncome)} ` + 
-                            `${t('预期盈利', 'Exp. Profit')}: ${formatNumber(expectedProfit)} ` + 
-                            `${t('实现盈利', 'Actual')}: ${formatNumber(profit)} ` + 
+            const content = `${t('支出', 'Expenses')}: ${formatNumber(outcome)} ` + 
+                            `${t('收入', 'Revenue')}: ${formatNumber(actualIncome)} ` + 
+                            `${t('预期盈利', 'Expected profit')}: ${formatNumber(expectedProfit)} ` + 
+                            `${t('实现盈利', 'Actual profit')}: ${formatNumber(profit)} ` + 
                             `(${sign}${Math.abs(excessPercent)}%)`;
 
             const colorIntensity = Math.min(Math.abs(excessPercent) / 20, 1) * 0.3 + 0.7;
@@ -96,7 +96,7 @@ export default function LostTrackerExpectEstimate() {
         const summaryContent = `${t('统计时长', 'Duration')}: ${totalDuration.toFixed(2)}${t('天', 'd')} ` +
                                `${t('净利润', 'Net Profit')}: ${formatNumber(totalProfit)} ` +
                                `(${formatNumber(totalProfit / totalDuration)}/${t('天', 'd')}) ` +
-                               `${t('较预期', 'vs Exp')}: ${formatNumber(totalExcessProfit / totalDuration)}/${t('天', 'd')} ` +
+                               `${t('较预期', 'vs Expected')}: ${formatNumber(totalExcessProfit / totalDuration)}/${t('天', 'd')} ` +
                                `(${totalExcessPercent}%)`;
 
         const colorIntensity = Math.min(Math.abs(totalExcessPercent) / 20, 1) * 0.2 + 0.8;
