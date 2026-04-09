@@ -5,167 +5,158 @@ import { processingCategory, ZHitemNames } from './utils';
 import LostTrackerExpectEstimate from './LostTrackerExpectEstimate'
 import { validateProfitSettings } from './settingsPanel';
 
+// --- 1. 环境初始化 ---
+window["MWIProfitPanel_Globals"] = globals;
+if (!window.getMwiObj) window.getMwiObj = () => window.mwi || null;
+
+const updateLangStatus = () => {
+    const lang = localStorage.getItem("i18nextLng")?.toLowerCase();
+    globals.isZHInGameSetting = lang ? lang.startsWith("zh") : false;
+};
+updateLangStatus();
+
+// --- 2. WebSocket Hook (Symbol 标记防冲突版) ---
+const PROCESSED_MARK = Symbol('MWI_PROFIT_PROCESSED');
+
 function hookWS() {
     const dataProperty = Object.getOwnPropertyDescriptor(MessageEvent.prototype, "data");
+    if (!dataProperty || !dataProperty.get) return;
     const oriGet = dataProperty.get;
 
-    dataProperty.get = hookedGet;
-    Object.defineProperty(MessageEvent.prototype, "data", dataProperty);
+    Object.defineProperty(MessageEvent.prototype, "data", {
+        get: function() {
+            const message = oriGet.call(this);
+            const socket = this.currentTarget;
+            if (!(socket instanceof WebSocket)) return message;
+            
+            const url = socket.url;
+            if (!url.includes("milkywayidle.com/ws") && !url.includes("milkywayidlecn.com/ws")) return message;
 
-    function hookedGet() {
-        const socket = this.currentTarget;
-        if (!(socket instanceof WebSocket)) {
-            return oriGet.call(this);
-        }
+            if (this[PROCESSED_MARK]) return message;
+            this[PROCESSED_MARK] = true;
 
-        // --- 修改开始：动态匹配 API 地址 ---
-        const hostname = window.location.hostname;
-        let wsUrl = "api.milkywayidle.com/ws";
-        let testWsUrl = "api-test.milkywayidle.com/ws";
-
-        // 如果在镜像站，切换匹配的 WS 地址
-        if (hostname.includes("milkywayidlecn.com")) {
-            wsUrl = "api.milkywayidlecn.com/ws";
-            testWsUrl = "api-test.milkywayidlecn.com/ws";
-        }
-
-        // 检查当前 socket 是否属于对应的 API
-        if (socket.url.indexOf(wsUrl) <= -1 && socket.url.indexOf(testWsUrl) <= -1) {
-            return oriGet.call(this);
-        }
-        // --- 修改结束 ---
-
-        const message = oriGet.call(this);
-        Object.defineProperty(this, "data", { value: message }); // Anti-loop
-
-        return handleMessage(message);
-    }
+            if (typeof message === 'string' && message.includes('"type":')) {
+                return handleMessage(message);
+            }
+            return message;
+        },
+        configurable: true,
+        enumerable: true
+    });
 }
 
+// --- 3. 核心修复：handleMessage 必须显式触发布局刷新 ---
 function handleMessage(message) {
     try {
-        let obj = JSON.parse(message);
-        if (obj) {
-            if (obj.type === "init_character_data") {
-                globals.initCharacterData_characterSkills = obj.characterSkills;
-                globals.initCharacterData_actionTypeDrinkSlotsMap = obj.actionTypeDrinkSlotsMap;
-                globals.initCharacterData_characterHouseRoomMap = obj.characterHouseRoomMap;
-                globals.initCharacterData_characterItems = obj.characterItems;
-                globals.initCharacterData_communityActionTypeBuffsMap = obj.communityActionTypeBuffsMap;
-                globals.initCharacterData_consumableActionTypeBuffsMap = obj.consumableActionTypeBuffsMap;
-                globals.initCharacterData_houseActionTypeBuffsMap = obj.houseActionTypeBuffsMap;
-                globals.initCharacterData_equipmentActionTypeBuffsMap = obj.equipmentActionTypeBuffsMap;
-                globals.initCharacterData_achievementActionTypeBuffsMap = obj.achievementActionTypeBuffsMap;
-                globals.initCharacterData_personalActionTypeBuffsMap = obj.personalActionTypeBuffsMap;
-                globals.initCharacterData_mooPassActionTypeBuffsMap = obj.mooPassActionTypeBuffsMap;
+        const obj = JSON.parse(message);
+        if (!obj || !obj.type) return message;
+
+        // 统一强制刷新函数：确保数据写完后 UI 立即重绘
+        const forceUpdateUI = () => {
+            globals.hasMarketItemUpdate = true;
+            // 延迟一丢丢确保 Proxy 数据写完，然后强制执行重绘
+            setTimeout(() => refreshProfitPanel(true), 0);
+        };
+
+        switch (obj.type) {
+            case "init_character_data":
+                Object.keys(obj).forEach(key => {
+                    if (key.includes('Map') || key === 'characterSkills' || key === 'characterItems') {
+                        globals[`initCharacterData_${key}`] = obj[key];
+                    }
+                });
                 waitForPannels();
-            }
-            else if (obj.type === "init_client_data") {
+                break;
+
+            case "init_client_data":
                 globals.initClientData_actionDetailMap = obj.actionDetailMap;
                 globals.initClientData_itemDetailMap = obj.itemDetailMap;
                 globals.initClientData_openableLootDropMap = obj.openableLootDropMap;
-            }
-            else if (obj.type === "market_item_order_books_updated") {
-                globals.hasMarketItemUpdate = true;
-                globals.freshnessMarketJson.updateDataFromMarket(obj?.marketItemOrderBooks);
-                console.log({ hasMarketItemUpdate: globals.hasMarketItemUpdate, obj });
-            }
-            else if (obj.type === "loot_log_updated") {
-                globals.lootLog = obj.lootLog;
-                LostTrackerExpectEstimate();
-            }
-            else if (obj.type === "skills_updated") {
+                forceUpdateUI();
+                break;
+
+            case "market_item_order_books_updated":
+                if (globals.freshnessMarketJson && obj.marketItemOrderBooks) {
+                    globals.freshnessMarketJson.updateDataFromMarket(obj.marketItemOrderBooks);
+                    forceUpdateUI();
+                }
+                break;
+
+            case "skills_updated":
+                // 技能升级时，游戏 state 更新稍慢，需要延迟获取
                 setTimeout(() => {
-                    // 兼容全局对象获取方式
-                    const mwiObj = typeof getMwiObj === 'function' ? getMwiObj() : window.getMwiObj?.();
+                    const mwiObj = window.getMwiObj();
                     if (mwiObj?.game?.state?.characterSkillMap) {
                         globals.initCharacterData_characterSkills = [...mwiObj.game.state.characterSkillMap.values()];
-                        refreshProfitPanel(true);
+                        forceUpdateUI();
                     }
-                    else console.error(obj);
-                }, 100);
-            }
-            else if (obj.type === "community_buffs_updated") {
-                globals.initCharacterData_communityActionTypeBuffsMap = obj.communityActionTypeBuffsMap;
-                refreshProfitPanel(true);
-            }
-            else if (obj.type === "consumable_buffs_updated") {
-                globals.initCharacterData_consumableActionTypeBuffsMap = obj.consumableActionTypeBuffsMap;
-                refreshProfitPanel(true);
-            }
-            else if (obj.type === "equipment_buffs_updated") {
-                globals.initCharacterData_equipmentActionTypeBuffsMap = obj.equipmentActionTypeBuffsMap;
-                refreshProfitPanel(true);
-            }
-            else if (obj.type === "house_rooms_updated") {
-                globals.initCharacterData_houseActionTypeBuffsMap = obj.houseActionTypeBuffsMap;
-                refreshProfitPanel(true);
-            }
-            // --- 成就更新监听 ---
-            else if (obj.type === "achievements_updated") {
-                globals.initCharacterData_achievementActionTypeBuffsMap = obj.achievementActionTypeBuffsMap;
-                refreshProfitPanel(true);
-            }
-            else if (obj.type === "personal_buffs_updated") {
-                globals.initCharacterData_personalActionTypeBuffsMap = obj.personalActionTypeBuffsMap;
-                refreshProfitPanel(true);
-            }
-            else if (obj.type === "moo_pass_buffs_updated") {
-                globals.initCharacterData_mooPassActionTypeBuffsMap = obj.mooPassActionTypeBuffsMap;
-                refreshProfitPanel(true);
-            }
+                }, 150);
+                break;
+
+            case "loot_log_updated":
+                globals.lootLog = obj.lootLog;
+                LostTrackerExpectEstimate();
+                break;
+
+            default:
+                // 处理装备(equipment)、喝茶(consumable)、成就(achievements)等所有实时增益更新
+                if (obj.type.endsWith("_updated")) {
+                    const mapKey = obj.type.replace('_updated', '') + 'ActionTypeBuffsMap';
+                    // 修正：部分更新消息的字段名可能不带 ActionType
+                    const possibleKeys = [mapKey, obj.type.replace('_updated', '') + 'BuffsMap'];
+                    
+                    possibleKeys.forEach(k => {
+                        if (obj[k]) {
+                            globals[`initCharacterData_${k}`] = obj[k];
+                            forceUpdateUI();
+                        }
+                    });
+                }
+                break;
         }
-    }
-    catch (err) { console.error(err); }
+    } catch (err) { }
     return message;
 }
 
+// --- 4. 映射订阅 ---
 globals.subscribe((key, value) => {
     if (key === "initClientData_actionDetailMap") {
-        const processingMap = {};
+        const pMap = {};
         for (const [actionHrid, actionDetail] of Object.entries(value)) {
-            const categorys = processingCategory[actionDetail.type];
-            if (categorys && categorys.indexOf(actionDetail.category) !== -1) {
-                const inputHrid = actionDetail.inputItems[0].itemHrid;
-                processingMap[inputHrid] = actionDetail;
+            const categories = processingCategory[actionDetail.type];
+            if (categories && categories.indexOf(actionDetail.category) !== -1) {
+                pMap[actionDetail.inputItems[0].itemHrid] = actionDetail;
             }
         }
-        globals.processingMap = processingMap;
+        globals.processingMap = pMap;
     }
     if (key === "initClientData_itemDetailMap") {
-        const en2ZhMap = {};
+        const en2Zh = {};
         for (const [hrid, item] of Object.entries(value)) {
-            const en = item.name;
-            const zh = ZHitemNames[hrid];
-            en2ZhMap[en] = zh;
+            en2Zh[item.name] = ZHitemNames[hrid] || item.name;
         }
-        globals.en2ZhMap = en2ZhMap;
+        globals.en2ZhMap = en2Zh;
     }
 });
 
-const profitSettings = validateProfitSettings(JSON.parse(GM_getValue('profitSettings', JSON.stringify({
-    materialPriceMode: 'ask',
-    productPriceMode: 'bid',
+// --- 5. 初始化 ---
+const savedSettings = GM_getValue('profitSettings');
+globals.profitSettings = validateProfitSettings(JSON.parse(savedSettings || JSON.stringify({
+    materialPriceMode: 'ask', productPriceMode: 'bid',
     dataSourceKeys: ['Official', 'MooketApi', 'Mooket'],
     actionCategories: ['milking', 'foraging', 'woodcutting', 'cheesesmithing', 'crafting', 'tailoring', 'cooking', 'brewing']
-}))));
-globals.profitSettings = profitSettings;
-
-globals.isZHInGameSetting = localStorage.getItem("i18nextLng")?.toLowerCase()?.startsWith("zh"); // 获取游戏内设置语言
+})));
 
 const initCD = localStorage.getItem("initClientData");
-
 if (initCD) {
-    const decomCD = LZString.decompressFromUTF16(initCD);
-    const obj = JSON.parse(decomCD);
-
-    globals.initClientData_actionDetailMap = obj.actionDetailMap;
-    globals.initClientData_itemDetailMap = obj.itemDetailMap;
-    globals.initClientData_openableLootDropMap = obj.openableLootDropMap;
+    try {
+        const obj = JSON.parse(LZString.decompressFromUTF16(initCD));
+        globals.initClientData_actionDetailMap = obj.actionDetailMap || {};
+        globals.initClientData_itemDetailMap = obj.itemDetailMap || {};
+        globals.initClientData_openableLootDropMap = obj.openableLootDropMap || {};
+    } catch (e) {}
 }
 
 hookWS();
 preFetchData();
 GM_addStyle(GM_getResourceText("bootstrapCSS"));
-
-window["MWIProfitPanel_Globals"] = globals;
