@@ -1,16 +1,19 @@
+
 import globals from './globals.js';
 import { GenerateDom } from './domGenerator.js';
 import { createTooltip } from './tooltipManager.js';
 import { initSettingsPanel } from './settingsPanel.js';
-import { formatDuration, getMwiObj, t } from './utils.js';
+import { formatDuration, getMwiObj } from './utils.js';
 
 let initialized = false;
 
+// 获取当前交易模式的标识
 function getCurrentTradingMode() {
     const settings = globals.profitSettings;
     return `${settings.materialPriceMode}-${settings.productPriceMode}`;
 }
 
+// 设置交易模式
 function setTradingMode(materialMode, productMode) {
     const settings = globals.profitSettings;
     globals.profitSettings = {
@@ -20,13 +23,14 @@ function setTradingMode(materialMode, productMode) {
     };
 }
 
+// 生成交易模式按钮组HTML
 function generateTradingModeButtons() {
     const currentMode = getCurrentTradingMode();
     const modes = [
-        { key: 'ask-bid', label: t('askBid'), material: 'ask', product: 'bid' },
-        { key: 'ask-ask', label: t('askAsk'), material: 'ask', product: 'ask' },
-        { key: 'bid-ask', label: t('bidAsk'), material: 'bid', product: 'ask' },
-        { key: 'bid-bid', label: t('bidBid'), material: 'bid', product: 'bid' }
+        { key: 'ask-bid', label: '高买低卖', material: 'ask', product: 'bid' },
+        { key: 'ask-ask', label: '高买高卖', material: 'ask', product: 'ask' },
+        { key: 'bid-ask', label: '低买高卖', material: 'bid', product: 'ask' },
+        { key: 'bid-bid', label: '低买低卖', material: 'bid', product: 'bid' }
     ];
 
     return modes.map(mode => `
@@ -59,10 +63,10 @@ export async function waitForPannels() {
     const rightPanelContainers = document.querySelectorAll("div.CharacterManagement_tabsComponentContainer__3oI5G");
     const leftPanelContainers = document.querySelectorAll("div.GamePage_middlePanel__ubts7 .MuiTabs-root");
     const targetNodes = [...rightPanelContainers, ...leftPanelContainers];
-    
     targetNodes.forEach(container => {
-        if (container.querySelector('.income-tab')) return;
+        if (container.querySelector('.MuiButtonBase-root.MuiTab-root.MuiTab-textColorPrimary.css-1q2h7u5.income-tab')) return;
 
+        // 添加标签按钮和面板容器
         const tabsContainer = container.querySelector('div.MuiTabs-flexContainer');
         const tabPanelsContainer =
             container.querySelector('div.TabsComponent_tabPanelsContainer__26mzo') ||
@@ -72,43 +76,39 @@ export async function waitForPannels() {
 
         const newTabButton = document.createElement('button');
         newTabButton.className = 'MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1q2h7u5 income-tab';
-        
-        // 保持原始 HTML 结构：Badge容器 -> 文本节点 + Badge小圆点
-        newTabButton.innerHTML = `
-            <span class="MuiBadge-root TabsComponent_badge__1Du26 css-1rzb3uu">
-                ${t('incomeTab')}
-                <span class="MuiBadge-badge MuiBadge-standard MuiBadge-invisible MuiBadge-anchorOriginTopRight MuiBadge-anchorOriginTopRightRectangular MuiBadge-overlapRectangular MuiBadge-colorWarning css-dpce5z"></span>
-            </span>
-            <span class="MuiTouchRipple-root css-w0pj6f"></span>
-        `;
+        newTabButton.innerHTML = `<span class="MuiBadge-root TabsComponent_badge__1Du26 css-1rzb3uu">收益<span class="MuiBadge-badge MuiBadge-standard MuiBadge-invisible MuiBadge-anchorOriginTopRight MuiBadge-anchorOriginTopRightRectangular MuiBadge-overlapRectangular MuiBadge-colorWarning css-dpce5z"></span></span><span class="MuiTouchRipple-root css-w0pj6f"></span>`;
+        newTabButton.classList.add('income-tab');
         tabsContainer.appendChild(newTabButton);
 
+        // 创建收益面板
         const newPanel = document.createElement('div');
         newPanel.className = 'TabPanel_tabPanel__tXMJF TabPanel_hidden__26UM3 income-panel';
         newPanel.innerHTML = `
             <div class="Inventory_inventory__17CH2 profit-pannel">
-                <h1 class="HousePanel_title__2fQ1U" style="position: relative; width: fit-content; margin: 4px auto 8px; font-size: 18px; font-weight: 600;">
-                    <div class="profit-title-text">${t('productionProfitDetails')}</div>
-                    <div class="HousePanel_guideTooltipContainer__1lAt1" style="position: absolute; left: 100%; top: 0; margin-top: 1px; margin-left: 12px;">
-                        <div class="GuideTooltip_guideTooltip__1tVq-" id="profitSettingsBtn" style="cursor: pointer">
-                            <svg role="img" aria-label="Guide" class="Icon_icon__2LtL_" width="100%" height="100%">
-                                <use href="/static/media/misc_sprite.6b3198dc.svg#settings"></use>
-                            </svg>
-                        </div>
+            <h1 class="HousePanel_title__2fQ1U" style="position: relative; width: fit-content; margin: 4px auto 8px; font-size: 18px; font-weight: 600;">
+                <div>生产收益详情</div>
+                <div class="HousePanel_guideTooltipContainer__1lAt1" style="position: absolute; left: 100%; top: 0; margin-top: 1px; margin-left: 12px;">
+                    <div class="GuideTooltip_guideTooltip__1tVq-" id="profitSettingsBtn" style="cursor: pointer">
+                        <svg role="img" aria-label="Guide" class="Icon_icon__2LtL_" width="100%" height="100%">
+                            <use href="/static/media/misc_sprite.6b3198dc.svg#settings"></use>
+                        </svg>
                     </div>
-                </h1>
+                </div>
+            </h1>
                 <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 10px 8px; flex-wrap: wrap;">
-                    <span class="profit-stat-text" style="color: green; font-size: 0.8em; margin-bottom: 4px;">${globals.freshnessMarketJson.stat()}</span>
+                    <span style="color: green; font-size: 0.8em; margin-bottom: 4px;">数据更新于: ${formatDuration(Date.now() - globals.freshnessMarketJson.time * 1000)}</span>
                     <div id="tradingModeContainer" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                         ${generateTradingModeButtons()}
                     </div>
                 </div>
                 <div class="Inventory_items__6SXv0 script_buildScore_added script_invSort_added">
-                    ${GenerateDom(globals.freshnessMarketJson)}
+                ${GenerateDom(globals.freshnessMarketJson)}
                 </div>
             </div>
         `;
         tabPanelsContainer.appendChild(newPanel);
+        container.dataset.processed = "true";
+
         setupTabSwitching(newTabButton, newPanel, tabPanelsContainer, container);
 
         if (!initialized) {
@@ -137,6 +137,8 @@ function setupTabSwitching(newTabButton, newPanel, tabPanelsContainer, container
         btn.addEventListener('click', () => {
             newPanel.classList.add('TabPanel_hidden__26UM3');
             newTabButton.classList.remove('Mui-selected');
+
+            // 添加选中状态并显示原标签面板
             btn.classList.add('Mui-selected');
             const tabIndex = Array.from(btn.parentNode.children)
                 .filter(el => !el.classList.contains('income-tab'))
@@ -150,75 +152,78 @@ function setupTabSwitching(newTabButton, newPanel, tabPanelsContainer, container
 
 function setupClickActions() {
     document.addEventListener('click', (e) => {
+        // 处理交易模式按钮点击 (包括label和radio)
         const tradingModeLabel = e.target.closest('.trading-mode-option');
         if (tradingModeLabel) {
             const radio = tradingModeLabel.querySelector('input[type="radio"]');
             if (radio) {
-                setTradingMode(radio.dataset.material, radio.dataset.product);
+                const materialMode = radio.dataset.material;
+                const productMode = radio.dataset.product;
+                setTradingMode(materialMode, productMode);
                 refreshProfitPanel(true);
+
+                // 更新所有按钮的样式
+                document.querySelectorAll('.trading-mode-option').forEach(label => {
+                    const labelRadio = label.querySelector('input[type="radio"]');
+                    const isSelected = labelRadio === radio;
+                    label.style.background = isSelected ? '#007bff' : '#f8f9fa';
+                    label.style.color = isSelected ? 'white' : '#333';
+                    label.style.borderColor = isSelected ? '#007bff' : '#dee2e6';
+                    labelRadio.checked = isSelected;
+                });
             }
             return;
         }
 
         const itemContainer = e.target.closest('.Item_item__2De2O.Profit-pannel');
         if (!itemContainer) return;
+
+        const tooltipData = itemContainer.dataset.tooltip;
+        if (!tooltipData) return;
+
         try {
-            const data = JSON.parse(itemContainer.dataset.tooltip);
+            const data = JSON.parse(tooltipData);
             if (data?.actionHrid && getMwiObj()?.game?.handleGoToAction) {
                 getMwiObj().game.handleGoToAction(data.actionHrid);
             }
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error('Click action error:', e);
+        }
     });
 }
 
+let profitRefreshTime = new Date();
 export function refreshProfitPanel(force = false) {
     if (!globals.freshnessMarketJson?.market) return;
 
-    // 1. 更新 Tab 按钮文本 (使用安全更新：只改文本节点)
-    document.querySelectorAll('.income-tab .MuiBadge-root').forEach(badgeRoot => {
-        if (badgeRoot.childNodes[0].nodeType === Node.TEXT_NODE) {
-            badgeRoot.childNodes[0].textContent = t('incomeTab');
+    const inventoryPanels = document.querySelectorAll('.Inventory_inventory__17CH2.profit-pannel');
+    inventoryPanels.forEach(panel => {
+        const timeSpan = panel.querySelector('span');
+        if (timeSpan) {
+            timeSpan.textContent = globals.freshnessMarketJson.stat();
+            // timeSpan.textContent = `数据更新于：${getDuration(new Date(globals.freshnessMarketJson.time * 1000))}，收益刷新于：${getDuration(profitRefreshTime)}，mooket${mooketStatus()}，${getMwiObj()?.coreMarket ? "支持" : "不支持"}实时价格`;
         }
-    });
 
-    // 2. 更新面板内部内容
-    document.querySelectorAll('.profit-pannel').forEach(panel => {
-        // 更新标题
-        const titleText = panel.querySelector('.profit-title-text');
-        if (titleText) titleText.textContent = t('productionProfitDetails');
-
-        // 更新统计信息
-        const statText = panel.querySelector('.profit-stat-text');
-        if (statText) statText.textContent = globals.freshnessMarketJson.stat();
-
-        // 更新交易模式按钮
+        // 更新交易模式按钮状态
         const tradingModeContainer = panel.querySelector('#tradingModeContainer');
         if (tradingModeContainer) {
             const currentMode = getCurrentTradingMode();
-            tradingModeContainer.querySelectorAll('.trading-mode-option').forEach(label => {
+            const labels = tradingModeContainer.querySelectorAll('.trading-mode-option');
+            labels.forEach(label => {
                 const radio = label.querySelector('input[type="radio"]');
                 const isSelected = radio.value === currentMode;
                 label.style.background = isSelected ? '#007bff' : '#f8f9fa';
                 label.style.color = isSelected ? 'white' : '#333';
                 label.style.borderColor = isSelected ? '#007bff' : '#dee2e6';
                 radio.checked = isSelected;
-                
-                const span = label.querySelector('span');
-                if (span) {
-                    const modeMap = {
-                        'ask-bid': t('askBid'), 'ask-ask': t('askAsk'),
-                        'bid-ask': t('bidAsk'), 'bid-bid': t('bidBid')
-                    };
-                    span.textContent = modeMap[radio.value] || span.textContent;
-                }
             });
         }
 
-        // 强制刷新列表
         if (force || globals.hasMarketItemUpdate) {
             const itemsContainer = panel.querySelector('.Inventory_items__6SXv0');
             if (itemsContainer) {
                 itemsContainer.innerHTML = GenerateDom(globals.freshnessMarketJson);
+                profitRefreshTime = new Date();
                 globals.hasMarketItemUpdate = false;
             }
         }
