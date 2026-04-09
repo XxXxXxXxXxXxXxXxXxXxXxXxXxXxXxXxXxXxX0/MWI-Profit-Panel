@@ -26,10 +26,10 @@ function setTradingMode(materialMode, productMode) {
 function generateTradingModeButtons() {
     const currentMode = getCurrentTradingMode();
     const modes = [
-        { key: 'ask-bid', label: t('高买低卖', 'High-Buy Low-Sell'), material: 'ask', product: 'bid' },
-        { key: 'ask-ask', label: t('高买高卖', 'High-Buy High-Sell'), material: 'ask', product: 'ask' },
-        { key: 'bid-ask', label: t('低买高卖', 'Low-Buy High-Sell'), material: 'bid', product: 'ask' },
-        { key: 'bid-bid', label: t('低买低卖', 'Low-Buy Low-Sell'), material: 'bid', product: 'bid' }
+        { key: 'ask-bid', label: t('高买低卖', 'Buy at Ask, Sell at Bid'), material: 'ask', product: 'bid' },
+        { key: 'ask-ask', label: t('高买高卖', 'Buy at Ask, Sell at Ask'), material: 'ask', product: 'ask' },
+        { key: 'bid-ask', label: t('低买高卖', 'Buy at Bid, Sell at Ask'), material: 'bid', product: 'ask' },
+        { key: 'bid-bid', label: t('低买低卖', 'Buy at Bid, Sell at Bid'), material: 'bid', product: 'bid' }
     ];
 
     return modes.map(mode => `
