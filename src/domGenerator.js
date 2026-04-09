@@ -4,6 +4,7 @@ import {
     processingCategory,
     getSvg,
     formatNumber,
+    getActionName, // 引入获取动作名称的函数
 } from "./utils";
 import ProfitCaculation from './profitCalculation'
 
@@ -38,11 +39,11 @@ export function GenerateDom(marketJson) {
             const iconId = action.hrid.replace(`/actions/${actionType}/`, '');
             const result = ProfitCaculation(action, marketJson);
 
-            // 【核心修改点】
             // 1. 使用 JSON.stringify 处理对象
             // 2. 使用 escapeHtml 转义处理后的字符串，确保 's 不会闭合单引号
             const safeTooltipData = escapeHtml(JSON.stringify(result));
 
+            // 修改点：aria-label 使用 getActionName 实现国际化
             const actionHtml =
                 `
                 <div class="Item_itemContainer__x7kH1" style="position: relative;">
@@ -50,7 +51,7 @@ export function GenerateDom(marketJson) {
                         <div class="Item_item__2De2O Item_clickable__3viV6 Profit-pannel" 
                              style="${levelEngouth ? "" : "background-color: var(--color-midnight-800);"}" 
                              data-tooltip='${safeTooltipData}'>
-                            <div class="Item_iconContainer__5z7j4"><svg role="img" aria-label="${action.name}"
+                            <div class="Item_iconContainer__5z7j4"><svg role="img" aria-label="${getActionName(action.hrid)}"
                                     class="Icon_icon__2LtL_" width="100%" height="100%">
                                     <use href="/static/media/${getSvg(iconId)}"></use>
                                 </svg></div>
@@ -67,6 +68,7 @@ export function GenerateDom(marketJson) {
         const actionHtml = [];
         actionsHtmlResult.sort((l, r) => r.profitPerHour - l.profitPerHour).forEach(v => actionHtml.push(v.actionHtml));
 
+        // 修改点：ZHActionTypeNames[actionType] 在 utils.js 中已通过 Proxy 自动处理国际化
         const actionTypeHtml =
             `
             <div>
