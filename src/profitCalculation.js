@@ -18,17 +18,27 @@ export default function ProfitCaculation(action, marketJson) {
     function getGuzzlingConcentration() {
         const guzzlingHrid = "/items/guzzling_pouch";
         const characterItems = globals.initCharacterData_characterItems || [];
-        const itemDetailMap = globals.initData_itemDetailMap || {};
+        const itemDetailMap = globals.initClientData_itemDetailMap || {};
         const enhancementMap = globals.itemEnhanceLevelToBuffBonusMap || {};
 
+        let maxEnhanceLevel = -1;
+        let targetItem = null;
+
+        // 寻找强化等级最高的牛饮袋
         for (const item of characterItems) {
-            if (item.itemHrid !== guzzlingHrid) {
-                continue;
+            if (item.itemHrid === guzzlingHrid) {
+                if (item.enhancementLevel > maxEnhanceLevel) {
+                    maxEnhanceLevel = item.enhancementLevel;
+                    targetItem = item;
+                }
             }
+        }
+
+        if (targetItem) {
             const guzzlingDetail = itemDetailMap[guzzlingHrid];
             const concentration = guzzlingDetail?.equipmentDetail?.noncombatStats["drinkConcentration"];
             if (concentration != null) {
-                const enhanceBonus = 1 + (enhancementMap[item.enhancementLevel] || 0) / 100;
+                const enhanceBonus = 1 + (enhancementMap[targetItem.enhancementLevel] || 0) / 100;
                 return concentration * enhanceBonus;
             }
         }
