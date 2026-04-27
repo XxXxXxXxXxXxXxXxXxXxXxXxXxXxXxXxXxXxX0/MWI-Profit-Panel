@@ -9,6 +9,7 @@ class GlobalState {
             initCharacterData_actionTypeDrinkSlotsMap: {},
             initCharacterData_characterHouseRoomMap: {},
             initCharacterData_characterItems: [],
+            initCharacterData_noncombatStats: {},
             initCharacterData_communityActionTypeBuffsMap: {},
             initCharacterData_consumableActionTypeBuffsMap: {},
             initCharacterData_houseActionTypeBuffsMap: {},
