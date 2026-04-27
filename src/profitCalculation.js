@@ -14,17 +14,39 @@ export default function ProfitCaculation(action, marketJson) {
     const buyMode = globals.profitSettings.materialPriceMode || 'bid';
     const sellMode = globals.profitSettings.productPriceMode || 'ask';
 
+    // --- 新增：Guzzling Pouch 浓度计算逻辑 ---
+    function getGuzzlingConcentration() {
+        const guzzlingHrid = "/items/guzzling_pouch";
+        const characterItems = globals.initCharacterData_characterItems || [];
+        const itemDetailMap = globals.initData_itemDetailMap || {};
+        const enhancementMap = globals.itemEnhanceLevelToBuffBonusMap || {};
+
+        for (const item of characterItems) {
+            if (item.itemHrid !== guzzlingHrid) {
+                continue;
+            }
+            const guzzlingDetail = itemDetailMap[guzzlingHrid];
+            const concentration = guzzlingDetail?.equipmentDetail?.noncombatStats["drinkConcentration"];
+            if (concentration != null) {
+                const enhanceBonus = 1 + (enhancementMap[item.enhancementLevel] || 0) / 100;
+                return concentration * enhanceBonus;
+            }
+        }
+        return 0;
+    }
+
     // 茶(饮品)效率和支出计算
     const teaBuffs = buffs.getTeaBuffs(action.type);
     const drinksConsumedHourAskPrice = { ask: 0, bid: 0 };
+    teaBuffs.concentration = 1 + getGuzzlingConcentration();
     const drinksList = globals.initCharacterData_actionTypeDrinkSlotsMap[action.type] || [];
     const drinkItems = [];
     for (const drink of drinksList) {
         if (!drink?.itemHrid) continue;
         const valuation = getItemValuation(drink.itemHrid, marketJson);
-        drinksConsumedHourAskPrice.ask += (valuation?.ask ?? 0) * 12;
-        drinksConsumedHourAskPrice.bid += (valuation?.bid ?? 0) * 12;
-        drinkItems.push({ ...valuation, name: getItemName(drink.itemHrid), countPerHour: 12 });
+        drinksConsumedHourAskPrice.ask += (valuation?.ask ?? 0) * 12 * teaBuffs.concentration;
+        drinksConsumedHourAskPrice.bid += (valuation?.bid ?? 0) * 12 * teaBuffs.concentration;
+        drinkItems.push({ ...valuation, name: getItemName(drink.itemHrid), countPerHour: 12 * teaBuffs.concentration });
     }
     const communityBuff = buffs.getCommunityBuff(action.type);
     const achievementBuff = buffs.getAchievementBuff(action.type); // 获取成就加成
