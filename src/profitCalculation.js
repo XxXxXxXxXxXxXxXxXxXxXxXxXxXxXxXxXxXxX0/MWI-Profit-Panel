@@ -14,41 +14,12 @@ export default function ProfitCaculation(action, marketJson) {
     const buyMode = globals.profitSettings.materialPriceMode || 'bid';
     const sellMode = globals.profitSettings.productPriceMode || 'ask';
 
-    // --- 新增：Guzzling Pouch 浓度计算逻辑 ---
-    function getGuzzlingConcentration() {
-        const guzzlingHrid = "/items/guzzling_pouch";
-        const characterItems = globals.initCharacterData_characterItems || [];
-        const itemDetailMap = globals.initClientData_itemDetailMap || {};
-        const enhancementMap = globals.itemEnhanceLevelToBuffBonusMap || {};
-
-        let maxEnhanceLevel = -1;
-        let targetItem = null;
-
-        // 寻找强化等级最高的牛饮袋
-        for (const item of characterItems) {
-            if (item.itemHrid === guzzlingHrid) {
-                if (item.enhancementLevel > maxEnhanceLevel) {
-                    maxEnhanceLevel = item.enhancementLevel;
-                    targetItem = item;
-                }
-            }
-        }
-
-        if (targetItem) {
-            const guzzlingDetail = itemDetailMap[guzzlingHrid];
-            const concentration = guzzlingDetail?.equipmentDetail?.noncombatStats["drinkConcentration"];
-            if (concentration != null) {
-                const enhanceBonus = 1 + (enhancementMap[targetItem.enhancementLevel] || 0) / 100;
-                return concentration * enhanceBonus;
-            }
-        }
-        return 0;
-    }
+    const drinkConcentrationRate = globals.initCharacterData_noncombatStats?.drinkConcentration || 0;
 
     // 茶(饮品)效率和支出计算
     const teaBuffs = buffs.getTeaBuffs(action.type);
+    teaBuffs.concentration = 1 + drinkConcentrationRate;
     const drinksConsumedHourAskPrice = { ask: 0, bid: 0 };
-    teaBuffs.concentration = 1 + getGuzzlingConcentration();
     const drinksList = globals.initCharacterData_actionTypeDrinkSlotsMap[action.type] || [];
     const drinkItems = [];
     for (const drink of drinksList) {
