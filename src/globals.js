@@ -23,7 +23,13 @@ class GlobalState {
             processingMap: {},
             en2ZhMap: {},
             lootLog: [],
-            profitSettings: {}
+            profitSettings: {},
+            itemEnhanceLevelToBuffBonusMap: {
+                0: 0, 1: 2, 2: 4.2, 3: 6.6, 4: 9.2, 5: 12,
+                6: 15, 7: 18.2, 8: 21.6, 9: 25.2, 10: 29,
+                11: 33.4, 12: 38.4, 13: 44, 14: 50.2, 15: 57,
+                16: 64.4, 17: 72.4, 18: 81, 19: 90.2, 20: 100,
+            }
         };
 
         this._listeners = new Set();
