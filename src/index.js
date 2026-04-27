@@ -58,6 +58,7 @@ function handleMessage(message) {
                 globals.initCharacterData_achievementActionTypeBuffsMap = obj.achievementActionTypeBuffsMap;
                 globals.initCharacterData_personalActionTypeBuffsMap = obj.personalActionTypeBuffsMap;
                 globals.initCharacterData_mooPassActionTypeBuffsMap = obj.mooPassActionTypeBuffsMap;
+                globals.initCharacterData_noncombatStats = obj.noncombatStats;
                 waitForPannels();
             }
             else if (obj.type === "init_client_data") {
@@ -101,7 +102,6 @@ function handleMessage(message) {
                 globals.initCharacterData_houseActionTypeBuffsMap = obj.houseActionTypeBuffsMap;
                 refreshProfitPanel(true);
             }
-            // --- 成就更新监听 ---
             else if (obj.type === "achievements_updated") {
                 globals.initCharacterData_achievementActionTypeBuffsMap = obj.achievementActionTypeBuffsMap;
                 refreshProfitPanel(true);
@@ -113,6 +113,12 @@ function handleMessage(message) {
             else if (obj.type === "moo_pass_buffs_updated") {
                 globals.initCharacterData_mooPassActionTypeBuffsMap = obj.mooPassActionTypeBuffsMap;
                 refreshProfitPanel(true);
+            }
+            else if (obj.type === "character_stats_updated") {
+                if (obj.noncombatStats) {
+                    globals.initCharacterData_noncombatStats = obj.noncombatStats;
+                    refreshProfitPanel(true);
+                }
             }
         }
     }
